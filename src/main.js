@@ -57,18 +57,35 @@ function renderRatings() {
 function renderAuthStatus(message) {
   const status = document.querySelector("#auth-status");
   const form = document.querySelector("#auth-form");
+  const signupLink = document.querySelector(".signup-link");
+  const accountPanel = document.querySelector("#account-panel");
+  const accountUsername = document.querySelector("#account-username");
+  const accountPermission = document.querySelector("#account-permission");
   const signOutButton = document.querySelector("#sign-out-button");
 
   status.textContent = message;
 
   if (!isSupabaseConfigured) {
     form.hidden = true;
+    signupLink.hidden = true;
+    accountPanel.hidden = true;
     signOutButton.hidden = true;
     return;
   }
 
-  form.hidden = Boolean(state.user);
-  signOutButton.hidden = !state.user;
+  const isLoggedIn = Boolean(state.user);
+
+  form.hidden = isLoggedIn;
+  signupLink.hidden = isLoggedIn;
+  accountPanel.hidden = !isLoggedIn;
+  signOutButton.hidden = !isLoggedIn;
+
+  if (isLoggedIn) {
+    accountUsername.textContent = state.username || "사용자";
+    accountPermission.textContent = state.canRate
+      ? "평가 권한 승인됨"
+      : "평가 권한 승인 대기";
+  }
 }
 
 async function loadUserRatingState() {

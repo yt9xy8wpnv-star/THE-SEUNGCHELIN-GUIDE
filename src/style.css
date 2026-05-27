@@ -196,6 +196,30 @@ h1 {
   font-size: 14px !important;
 }
 
+.account-panel {
+  display: grid;
+  gap: 5px;
+  padding: 14px 0 4px;
+  border-top: 1px solid var(--line);
+}
+
+.account-panel span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.account-panel strong {
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 400;
+}
+
+.account-panel p {
+  margin-bottom: 0;
+  color: var(--red);
+  font-size: 13px;
+}
+
 .auth-panel p {
   margin-bottom: 0;
   color: var(--muted);
@@ -476,9 +500,23 @@ h2 {
 }
 
 .stars button:disabled {
+  border-color: transparent;
   cursor: not-allowed;
   opacity: 0.38;
   transform: none;
+}
+
+.stars button:disabled:hover,
+.stars button:disabled:focus-visible {
+  border-color: transparent;
+  transform: none;
+  outline: 0;
+}
+
+.stars button:disabled:hover img,
+.stars button:disabled:focus-visible img {
+  opacity: 0.32;
+  filter: grayscale(1);
 }
 
 .stars button.active {
