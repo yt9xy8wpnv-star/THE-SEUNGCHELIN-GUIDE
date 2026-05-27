@@ -261,11 +261,10 @@ on conflict (id) do update set
   menu = excluded.menu,
   image_path = excluded.image_path;
 
--- 평가 권한 부여 예시:
--- update public.profiles
--- set username = 'student01'
--- where email = 'student@example.com';
+-- 회원가입 시 이메일은 앱에서 username || '@seungchelin.local' 형태로 자동 생성합니다.
+-- 예: username이 student01이면 profiles.email은 student01@seungchelin.local 입니다.
 --
+-- 평가 권한 부여 예시:
 -- update public.profiles
 -- set can_rate = true
 -- where username = 'student01';

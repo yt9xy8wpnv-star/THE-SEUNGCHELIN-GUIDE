@@ -4,13 +4,25 @@ import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 const form = document.querySelector("#signup-form");
 const status = document.querySelector("#signup-status");
 const usernameInput = document.querySelector("#signup-username");
-const emailInput = document.querySelector("#signup-email");
 const passwordInput = document.querySelector("#signup-password");
 const passwordConfirmInput = document.querySelector("#signup-password-confirm");
 const submitButton = form.querySelector('button[type="submit"]');
+const INTERNAL_EMAIL_DOMAIN = "seungchelin.local";
 
 function setStatus(message) {
   status.textContent = message;
+}
+
+function normalizeUsername(value) {
+  return value.trim().toLowerCase();
+}
+
+function isValidUsername(value) {
+  return /^[a-z0-9_]{3,24}$/.test(value);
+}
+
+function emailForUsername(username) {
+  return `${username}@${INTERNAL_EMAIL_DOMAIN}`;
 }
 
 function initPasswordToggles() {
@@ -37,13 +49,18 @@ form.addEventListener("submit", async (event) => {
       return;
     }
 
-    const username = usernameInput.value.trim().toLowerCase();
-    const email = emailInput.value.trim().toLowerCase();
+    const username = normalizeUsername(usernameInput.value);
+    const email = emailForUsername(username);
     const password = passwordInput.value;
     const passwordConfirm = passwordConfirmInput.value;
 
-    if (!username || !email || !password) {
+    if (!username || !password) {
       setStatus("모든 항목을 입력해주세요.");
+      return;
+    }
+
+    if (!isValidUsername(username)) {
+      setStatus("아이디는 영문 소문자, 숫자, 밑줄로 3~24자만 가능합니다.");
       return;
     }
 
