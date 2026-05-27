@@ -545,6 +545,13 @@ h1 {
   margin-bottom: 14px;
 }
 
+.meal-date-label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
 .section-heading.compact {
   margin-bottom: 20px;
 }
@@ -568,10 +575,80 @@ h2 {
   cursor: pointer;
 }
 
+.arrow-button:disabled {
+  color: #c8c8c8;
+  border-color: var(--line);
+  cursor: not-allowed;
+}
+
+.date-controls {
+  display: inline-grid;
+  grid-template-columns: 40px minmax(120px, auto) 40px;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-controls time {
+  color: var(--ink);
+  font-size: 15px;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .meal-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
+}
+
+.meal-loading,
+.empty-meal-card {
+  grid-column: 1 / -1;
+  min-height: 248px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.meal-loading {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.empty-meal-card {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  padding: 48px 26px;
+  text-align: center;
+}
+
+.empty-meal-card img {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  opacity: 0.22;
+  filter: grayscale(1);
+}
+
+.empty-meal-card h3 {
+  margin-bottom: 0;
+  font-size: 25px;
+  font-weight: 400;
+}
+
+.empty-meal-card p {
+  max-width: 420px;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.65;
+  word-break: keep-all;
 }
 
 .meal-card {
@@ -943,6 +1020,16 @@ h2 {
 
   .meal-section {
     padding-bottom: 54px;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .date-controls {
+    width: 100%;
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
   }
 
   .meal-card img {

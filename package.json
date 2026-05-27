@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync:meals": "node scripts/syncMeals.js"
   },
   "type": "module",
   "dependencies": {

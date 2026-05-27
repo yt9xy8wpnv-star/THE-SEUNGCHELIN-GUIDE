@@ -283,17 +283,8 @@ with check (
   and public.can_current_user_rate()
 );
 
-insert into public.meals (id, meal_date, meal_slot, title, menu, image_path)
-values
-  ('breakfast', '2026-05-27', 'breakfast', '계란죽 · 과일 샐러드', array['김가루 주먹밥', '요구르트', '배추김치'], '/assets/breakfast.png'),
-  ('lunch', '2026-05-27', 'lunch', '제육덮밥 · 미역국', array['콘치즈', '오이무침', '깍두기'], '/assets/lunch.png'),
-  ('dinner', '2026-05-27', 'dinner', '카레라이스 · 치킨너겟', array['양배추 샐러드', '단무지', '사과주스'], '/assets/dinner.png')
-on conflict (id) do update set
-  meal_date = excluded.meal_date,
-  meal_slot = excluded.meal_slot,
-  title = excluded.title,
-  menu = excluded.menu,
-  image_path = excluded.image_path;
+delete from public.meals
+where id in ('breakfast', 'lunch', 'dinner');
 
 -- 회원가입 시 이메일은 앱에서 username || '@seungchelin.local' 형태로 자동 생성합니다.
 -- 예: username이 student01이면 profiles.email은 student01@seungchelin.local 입니다.
