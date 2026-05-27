@@ -34,7 +34,7 @@ function setCardRating(card, activeValue) {
 
   buttons.forEach((button) => {
     const buttonValue = Number(button.dataset.value);
-    button.classList.toggle("active", buttonValue === activeValue);
+    button.classList.toggle("active", buttonValue <= activeValue);
     button.setAttribute("aria-checked", String(buttonValue === activeValue));
   });
 }

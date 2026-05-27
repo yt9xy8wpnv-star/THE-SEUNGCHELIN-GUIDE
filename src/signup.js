@@ -62,12 +62,12 @@ form.addEventListener("submit", async (event) => {
   }
 
   if (data.session) {
-    setStatus("회원가입이 완료되었습니다. 메인으로 이동합니다.");
+    setStatus("회원가입이 완료되었습니다. 승인 후 평가할 수 있습니다.");
     window.setTimeout(() => {
       window.location.href = "/";
     }, 700);
     return;
   }
 
-  setStatus("회원가입이 완료되었습니다. 이메일 확인 설정이 켜져 있다면 메일을 확인해주세요.");
+  setStatus("회원가입이 완료되었습니다. 이메일 확인 후 승인되면 평가할 수 있습니다.");
 });

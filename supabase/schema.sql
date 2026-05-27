@@ -2,7 +2,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   username text,
-  can_rate boolean not null default true,
+  can_rate boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -10,7 +10,7 @@ alter table public.profiles
 add column if not exists username text;
 
 alter table public.profiles
-alter column can_rate set default true;
+alter column can_rate set default false;
 
 create unique index if not exists profiles_username_key
 on public.profiles (lower(username))
@@ -58,7 +58,7 @@ begin
     new.id,
     new.email,
     nullif(lower(new.raw_user_meta_data->>'username'), ''),
-    true
+    false
   )
   on conflict (id) do update set email = excluded.email;
   return new;
