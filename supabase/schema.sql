@@ -37,6 +37,13 @@ create table if not exists public.ratings (
   unique (user_id, meal_id)
 );
 
+create table if not exists public.best_meals (
+  id bigint generated always as identity primary key,
+  meal_id text not null unique references public.meals(id) on delete cascade,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
 alter table public.ratings
 add column if not exists one_line_review text not null default '';
 
@@ -79,6 +86,7 @@ add constraint ratings_one_line_review_length_check check (
 alter table public.profiles enable row level security;
 alter table public.meals enable row level security;
 alter table public.ratings enable row level security;
+alter table public.best_meals enable row level security;
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -199,6 +207,35 @@ $$;
 
 grant execute on function public.complete_signup_profile(uuid, text, text) to anon, authenticated;
 
+create or replace function public.add_best_meal(target_meal_id text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or not public.can_current_user_rate() then
+    raise exception 'not allowed';
+  end if;
+
+  insert into public.best_meals (meal_id, created_by, created_at)
+  values (target_meal_id, auth.uid(), now())
+  on conflict (meal_id) do update set
+    created_by = excluded.created_by,
+    created_at = excluded.created_at;
+
+  delete from public.best_meals
+  where id in (
+    select id
+    from public.best_meals
+    order by created_at desc, id desc
+    offset 10
+  );
+end;
+$$;
+
+grant execute on function public.add_best_meal(text) to authenticated;
+
 create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql
@@ -255,6 +292,13 @@ with check (
 drop policy if exists "Ratings are readable by everyone" on public.ratings;
 create policy "Ratings are readable by everyone"
 on public.ratings
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "Best meals are readable by everyone" on public.best_meals;
+create policy "Best meals are readable by everyone"
+on public.best_meals
 for select
 to anon, authenticated
 using (true);

@@ -1,11 +1,12 @@
 import "./style.css";
+import { initMenu } from "./menu.js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 
 const STORAGE_KEY = "seungchelin-ratings";
 const REVIEW_STORAGE_KEY = "seungchelin-reviews";
 const REVIEW_CHARACTER_LIMIT = 30;
 const REVIEW_EMPTY_TEXT = "한줄평을 남겨보세요";
-const REVIEW_LOCKED_TEXT = "승인 후 한줄평 작성 가능";
+const REVIEW_PUBLIC_EMPTY_TEXT = "아직 한줄평이 없습니다";
 const KOREA_TIME_ZONE = "Asia/Seoul";
 const MAX_PAST_DAYS = 3;
 const MAX_FUTURE_DAYS = 7;
@@ -41,6 +42,8 @@ const state = {
   meals: [],
   userRatings: {},
   userReviews: {},
+  publicRatings: {},
+  publicReviews: {},
   isLoadingMeals: false,
 };
 
@@ -181,6 +184,8 @@ function getMealIds() {
 function resetMealFeedbackState() {
   state.userRatings = Object.fromEntries(getMealIds().map((id) => [id, 0]));
   state.userReviews = Object.fromEntries(getMealIds().map((id) => [id, ""]));
+  state.publicRatings = Object.fromEntries(getMealIds().map((id) => [id, 0]));
+  state.publicReviews = Object.fromEntries(getMealIds().map((id) => [id, ""]));
 }
 
 function sortMeals(meals) {
@@ -258,10 +263,38 @@ function setCardRating(card, activeValue) {
   });
 }
 
+function getVisibleRating(meal) {
+  if (state.canRate) return state.userRatings[meal] || 0;
+  return state.publicRatings[meal] || 0;
+}
+
+function getVisibleReview(meal) {
+  if (state.canRate) return state.userReviews[meal] || "";
+  return state.publicReviews[meal] || "";
+}
+
 function setRatingEnabled(enabled) {
   document.querySelectorAll(".stars button").forEach((button) => {
     button.disabled = !enabled;
   });
+}
+
+function closeBestMenus() {
+  document.querySelectorAll("[data-best-menu]").forEach((menu) => {
+    menu.hidden = true;
+  });
+
+  document.querySelectorAll("[data-best-menu-button]").forEach((button) => {
+    button.setAttribute("aria-expanded", "false");
+  });
+}
+
+function setBestActionsEnabled(enabled) {
+  document.querySelectorAll("[data-best-actions]").forEach((actions) => {
+    actions.hidden = !enabled;
+  });
+
+  if (!enabled) closeBestMenus();
 }
 
 function setReviewEnabled(enabled) {
@@ -289,11 +322,12 @@ function setReviewEnabled(enabled) {
 function renderRatings() {
   document.querySelectorAll(".meal-card").forEach((card) => {
     const meal = card.dataset.meal;
-    setCardRating(card, state.userRatings[meal] || 0);
+    setCardRating(card, getVisibleRating(meal));
   });
 
   setRatingEnabled(state.canRate);
   setReviewEnabled(state.canRate);
+  setBestActionsEnabled(state.canRate);
 }
 
 function renderReviews() {
@@ -306,8 +340,8 @@ function renderReviews() {
 
     if (!display || !displayText || !form || !input) return;
 
-    const review = state.userReviews[meal] || "";
-    const fallbackText = state.canRate ? REVIEW_EMPTY_TEXT : REVIEW_LOCKED_TEXT;
+    const review = getVisibleReview(meal);
+    const fallbackText = state.canRate ? REVIEW_EMPTY_TEXT : REVIEW_PUBLIC_EMPTY_TEXT;
 
     displayText.textContent = review || fallbackText;
     display.dataset.empty = String(!review);
@@ -381,9 +415,16 @@ function getNoMealMessage() {
 function mealCardTemplate(meal) {
   const slot = SLOT_META[meal.meal_slot] ?? SLOT_META.lunch;
   const menu = Array.isArray(meal.menu) ? meal.menu.filter(Boolean) : [];
-  const title = meal.title || menu.slice(0, 2).join(" · ") || "급식 정보";
+  const allMenuItems = [meal.title, ...menu]
+    .flatMap((item) => String(item || "").split(" · "))
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const title = `${slot.label} 급식`;
   const imagePath = meal.image_path || slot.fallbackImage;
   const featured = meal.meal_slot === "lunch" ? " featured" : "";
+  const menuMarkup = allMenuItems
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("");
 
   return `
     <article class="meal-card${featured}" data-meal="${escapeHtml(meal.id)}">
@@ -391,9 +432,9 @@ function mealCardTemplate(meal) {
       <div class="meal-content">
         <p class="meal-time">${escapeHtml(slot.label)}</p>
         <h3>${escapeHtml(title)}</h3>
-        <p class="menu-list">${escapeHtml(menu.join(", "))}</p>
+        <ul class="meal-menu-list">${menuMarkup}</ul>
         <div class="rating-row">
-          <div class="stars" role="radiogroup" aria-label="${escapeHtml(slot.label)} 별점">
+          <div class="stars" role="radiogroup" aria-label="${escapeHtml(slot.label)} 별점" data-rating-control>
             <button type="button" aria-label="${escapeHtml(slot.label)} 1스타" data-value="1"><img src="/rate/MichelinStar.png" alt="" /></button>
             <button type="button" aria-label="${escapeHtml(slot.label)} 2스타" data-value="2"><img src="/rate/MichelinStar.png" alt="" /></button>
             <button type="button" aria-label="${escapeHtml(slot.label)} 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
@@ -419,6 +460,20 @@ function mealCardTemplate(meal) {
             <button type="submit">저장</button>
           </div>
         </form>
+        <div class="meal-card-actions" data-best-actions hidden>
+          <button
+            class="meal-more-button"
+            type="button"
+            aria-label="${escapeHtml(slot.label)} 급식 추가 메뉴"
+            aria-expanded="false"
+            data-best-menu-button
+          >
+            ...
+          </button>
+          <div class="meal-action-menu" data-best-menu hidden>
+            <button type="button" data-send-best>BEST 급식으로 보내기</button>
+          </div>
+        </div>
       </div>
     </article>
   `;
@@ -505,18 +560,28 @@ async function loadUserRatingState() {
   state.username = "";
   resetMealFeedbackState();
 
+  const mealIds = getMealIds();
+  const publicRatingsRequest = mealIds.length
+    ? supabase
+        .from("ratings")
+        .select("meal_id, score, one_line_review, updated_at, created_at")
+        .in("meal_id", mealIds)
+    : Promise.resolve({ data: [] });
+
+  const { data: publicRatings } = await publicRatingsRequest;
+  applyPublicFeedback(publicRatings ?? []);
+
   if (!state.user) {
-    renderAuthStatus("로그인하면 평가 권한을 확인합니다.");
+    renderAuthStatus("로그인하면 평가를 남길 수 있습니다.");
     return;
   }
 
-  const mealIds = getMealIds();
   const profileRequest = supabase
     .from("profiles")
     .select("can_rate, username")
     .eq("id", state.user.id)
     .maybeSingle();
-  const ratingsRequest = mealIds.length
+  const userRatingsRequest = mealIds.length
     ? supabase
         .from("ratings")
         .select("meal_id, score, one_line_review")
@@ -524,15 +589,15 @@ async function loadUserRatingState() {
         .in("meal_id", mealIds)
     : Promise.resolve({ data: [] });
 
-  const [{ data: profile }, { data: ratings }] = await Promise.all([
+  const [{ data: profile }, { data: userRatings }] = await Promise.all([
     profileRequest,
-    ratingsRequest,
+    userRatingsRequest,
   ]);
 
   state.canRate = Boolean(profile?.can_rate);
   state.username = profile?.username || state.user.email || "사용자";
 
-  ratings?.forEach((rating) => {
+  userRatings?.forEach((rating) => {
     if (rating.meal_id in state.userRatings) {
       state.userRatings[rating.meal_id] = rating.score;
       state.userReviews[rating.meal_id] = rating.one_line_review || "";
@@ -544,6 +609,38 @@ async function loadUserRatingState() {
       ? `${state.username} 평가 가능`
       : `${state.username} 평가 권한 없음`,
   );
+}
+
+function applyPublicFeedback(ratings) {
+  const summary = {};
+
+  ratings.forEach((rating) => {
+    if (!(rating.meal_id in state.publicRatings)) return;
+
+    if (!summary[rating.meal_id]) {
+      summary[rating.meal_id] = {
+        total: 0,
+        count: 0,
+        review: "",
+        reviewTime: "",
+      };
+    }
+
+    summary[rating.meal_id].total += Number(rating.score) || 0;
+    summary[rating.meal_id].count += 1;
+
+    const review = String(rating.one_line_review || "").trim();
+    const reviewTime = rating.updated_at || rating.created_at || "";
+    if (review && reviewTime >= summary[rating.meal_id].reviewTime) {
+      summary[rating.meal_id].review = review;
+      summary[rating.meal_id].reviewTime = reviewTime;
+    }
+  });
+
+  Object.entries(summary).forEach(([meal, value]) => {
+    state.publicRatings[meal] = Math.round(value.total / value.count);
+    state.publicReviews[meal] = value.review;
+  });
 }
 
 async function saveSupabaseRating(meal, score) {
@@ -590,6 +687,27 @@ async function saveSupabaseReview(meal, review) {
   renderAuthStatus("한줄평이 저장되었습니다.");
 }
 
+async function sendMealToBest(meal) {
+  if (!state.canRate) return;
+
+  if (!isSupabaseConfigured) {
+    renderAuthStatus("Supabase 연결 후 BEST 급식에 보낼 수 있습니다.");
+    return;
+  }
+
+  const { error } = await supabase.rpc("add_best_meal", {
+    target_meal_id: meal,
+  });
+
+  if (error) {
+    renderAuthStatus("BEST 급식 저장 권한이 없습니다.");
+    return;
+  }
+
+  closeBestMenus();
+  renderAuthStatus("BEST 급식으로 보냈습니다.");
+}
+
 async function changeSelectedDate(days) {
   const nextDate = clampDate(addDays(state.selectedDate, days));
   if (nextDate === state.selectedDate) return;
@@ -614,16 +732,17 @@ function initMealInteractions() {
     if (!card) return;
 
     const meal = card.dataset.meal;
-    const starButton = event.target.closest(".stars button");
+    const ratingControl = event.target.closest("[data-rating-control]");
     const display = event.target.closest("[data-review-display]");
     const cancelButton = event.target.closest("[data-review-cancel]");
+    const bestMenuButton = event.target.closest("[data-best-menu-button]");
+    const sendBestButton = event.target.closest("[data-send-best]");
 
-    if (starButton) {
+    if (ratingControl) {
       if (!state.canRate) return;
 
-      const selectedValue = Number(starButton.dataset.value);
       const currentValue = state.userRatings[meal] || 0;
-      const value = currentValue === selectedValue ? 0 : selectedValue;
+      const value = (currentValue + 1) % 4;
 
       if (!isSupabaseConfigured) {
         state.userRatings[meal] = value;
@@ -636,6 +755,23 @@ function initMealInteractions() {
       return;
     }
 
+    if (bestMenuButton) {
+      if (!state.canRate) return;
+      const menu = card.querySelector("[data-best-menu]");
+      const willOpen = menu?.hidden;
+      closeBestMenus();
+      if (menu) {
+        menu.hidden = !willOpen;
+        bestMenuButton.setAttribute("aria-expanded", String(willOpen));
+      }
+      return;
+    }
+
+    if (sendBestButton) {
+      await sendMealToBest(meal);
+      return;
+    }
+
     if (display) {
       if (!state.canRate) return;
       setReviewEditing(card, true);
@@ -645,6 +781,10 @@ function initMealInteractions() {
     if (cancelButton) {
       setReviewEditing(card, false);
     }
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".meal-card-actions")) closeBestMenus();
   });
 
   mealGrid.addEventListener("input", (event) => {
@@ -749,6 +889,7 @@ function initPasswordToggles() {
 }
 
 async function initRatings() {
+  initMenu({ auth: false });
   initPasswordToggles();
   initDateControls();
   initMealInteractions();

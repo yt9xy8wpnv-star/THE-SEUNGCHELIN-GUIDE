@@ -80,5 +80,5 @@ async function loadMyPage() {
     .join("");
 }
 
-initMenu();
+initMenu({ onAuthChange: loadMyPage });
 loadMyPage();

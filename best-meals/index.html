@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BEST 급식 | THE SEUNGCHELIN GUIDE</title>
-    <script type="module" src="/src/staticPage.js"></script>
+    <script type="module" src="/src/bestMeals.js"></script>
   </head>
   <body class="info-page">
     <header class="site-header">
@@ -43,20 +43,18 @@
         <div class="red-rule"></div>
         <p class="eyebrow">추천 기록</p>
         <h1 id="page-title">BEST 급식</h1>
-        <p class="hero-text">평가가 쌓이면 높은 점수를 받은 급식들을 이곳에서 보여줄 예정입니다.</p>
+        <p class="hero-text">최근 BEST로 보내진 급식 10개를 별점과 한줄평으로 모아봅니다.</p>
       </section>
 
-      <section class="info-grid">
-        <article class="info-card">
-          <span>준비 중</span>
-          <h2>랭킹 보드</h2>
-          <p>별점 평균과 한줄평 반응을 바탕으로 BEST 급식 목록을 구성할 수 있습니다.</p>
-        </article>
-        <article class="info-card">
-          <span>예정</span>
-          <h2>기간별 보기</h2>
-          <p>오늘, 이번 주, 이번 달 기준으로 급식을 비교하는 화면을 추가할 수 있습니다.</p>
-        </article>
+      <section class="best-section" aria-labelledby="best-title">
+        <div class="section-heading compact-heading">
+          <div>
+            <div class="red-rule"></div>
+            <h2 id="best-title">최근 BEST</h2>
+          </div>
+          <p id="best-status">BEST 급식을 불러오는 중입니다.</p>
+        </div>
+        <div class="best-grid" id="best-grid"></div>
       </section>
     </main>
   </body>
