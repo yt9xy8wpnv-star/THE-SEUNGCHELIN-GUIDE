@@ -194,6 +194,30 @@ for select
 to authenticated
 using ((select auth.uid()) = id);
 
+drop policy if exists "Users can create own profile" on public.profiles;
+create policy "Users can create own profile"
+on public.profiles
+for insert
+to authenticated
+with check (
+  (select auth.uid()) = id
+  and can_rate = false
+);
+
+drop policy if exists "Users can update own unapproved profile" on public.profiles;
+create policy "Users can update own unapproved profile"
+on public.profiles
+for update
+to authenticated
+using (
+  (select auth.uid()) = id
+  and can_rate = false
+)
+with check (
+  (select auth.uid()) = id
+  and can_rate = false
+);
+
 drop policy if exists "Ratings are readable by everyone" on public.ratings;
 create policy "Ratings are readable by everyone"
 on public.ratings
