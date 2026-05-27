@@ -16,7 +16,6 @@ function getAuthPanelMarkup() {
           aria-label="로그인 아이디"
         />
         <div class="password-field">
-          <button type="button" data-password-toggle="auth-password">보기</button>
           <input
             id="auth-password"
             type="password"
@@ -24,6 +23,7 @@ function getAuthPanelMarkup() {
             placeholder="비밀번호"
             aria-label="로그인 비밀번호"
           />
+          <button type="button" data-password-toggle="auth-password">보기</button>
         </div>
         <button type="submit">로그인</button>
       </form>

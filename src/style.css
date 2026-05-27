@@ -295,7 +295,7 @@ h1 {
 
 .password-field {
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 58px;
   align-items: center;
   gap: 8px;
 }

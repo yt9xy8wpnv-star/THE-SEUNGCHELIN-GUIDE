@@ -168,7 +168,7 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
             class="best-delete-button"
             type="button"
             data-remove-best="${escapeHtml(bestMeal.meal_id)}"
-            aria-label="BEST 급식에서 삭제"
+            aria-label="BEST 식사에서 삭제"
           >
             삭제
           </button>
@@ -223,11 +223,11 @@ async function loadBestMeals() {
 
   if (!isSupabaseConfigured) {
     bestStatus.textContent = "Supabase 연결 후 사용할 수 있습니다.";
-    renderEmpty("아직 BEST 급식이 없습니다.");
+    renderEmpty("아직 BEST 식사가 없습니다.");
     return;
   }
 
-  bestStatus.textContent = "BEST 급식을 불러오는 중입니다.";
+  bestStatus.textContent = "BEST 식사를 불러오는 중입니다.";
 
   try {
     const bestMeals = await fetchPublicRows("best_meals", {
@@ -239,8 +239,8 @@ async function loadBestMeals() {
     if (requestId !== bestLoadSerial) return;
 
     if (!bestMeals?.length) {
-      bestStatus.textContent = "아직 등록된 BEST 급식이 없습니다.";
-      renderEmpty("아직 BEST 급식이 없습니다.");
+      bestStatus.textContent = "아직 등록된 BEST 식사가 없습니다.";
+      renderEmpty("아직 BEST 식사가 없습니다.");
       return;
     }
 
@@ -264,8 +264,8 @@ async function loadBestMeals() {
     const ratingSummary = summarizeRatings(ratings ?? []);
 
     if (!visibleBestMeals.length) {
-      bestStatus.textContent = "BEST 급식과 연결된 식단이 없습니다.";
-      renderEmpty("BEST 급식을 표시할 수 없습니다.");
+      bestStatus.textContent = "BEST 식사와 연결된 식단이 없습니다.";
+      renderEmpty("BEST 식사를 표시할 수 없습니다.");
       return;
     }
 
@@ -277,7 +277,7 @@ async function loadBestMeals() {
   } catch (error) {
     if (requestId !== bestLoadSerial) return;
 
-    bestStatus.textContent = "BEST 급식을 불러오지 못했습니다.";
+    bestStatus.textContent = "BEST 식사를 불러오지 못했습니다.";
     renderEmpty("잠시 후 다시 확인해주세요.");
     console.error(error);
   }
@@ -286,14 +286,14 @@ async function loadBestMeals() {
 async function removeBestMeal(mealId) {
   if (!state.canManageBest || !isSupabaseConfigured) return;
 
-  bestStatus.textContent = "BEST 급식에서 삭제하는 중입니다.";
+  bestStatus.textContent = "BEST 식사에서 삭제하는 중입니다.";
 
   const { error } = await supabase.rpc("remove_best_meal", {
     target_meal_id: mealId,
   });
 
   if (error) {
-    bestStatus.textContent = "BEST 급식을 삭제하지 못했습니다.";
+    bestStatus.textContent = "BEST 식사를 삭제하지 못했습니다.";
     return;
   }
 

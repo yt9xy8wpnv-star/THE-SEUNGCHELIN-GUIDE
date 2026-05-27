@@ -485,7 +485,7 @@ function mealCardTemplate(meal) {
             ...
           </button>
           <div class="meal-action-menu" data-best-menu hidden>
-            <button type="button" data-send-best>BEST 급식으로 보내기</button>
+            <button type="button" data-send-best>BEST 식사로 보내기</button>
           </div>
         </div>
       </div>
@@ -716,7 +716,7 @@ async function sendMealToBest(meal) {
   if (!state.canRate) return;
 
   if (!isSupabaseConfigured) {
-    renderAuthStatus("Supabase 연결 후 BEST 급식에 보낼 수 있습니다.");
+    renderAuthStatus("Supabase 연결 후 BEST 식사에 보낼 수 있습니다.");
     return;
   }
 
@@ -725,12 +725,12 @@ async function sendMealToBest(meal) {
   });
 
   if (error) {
-    renderAuthStatus("BEST 급식 저장 권한이 없습니다.");
+    renderAuthStatus("BEST 식사 저장 권한이 없습니다.");
     return;
   }
 
   closeBestMenus();
-  renderAuthStatus("BEST 급식으로 보냈습니다.");
+  renderAuthStatus("BEST 식사로 보냈습니다.");
 }
 
 async function changeSelectedDate(days) {
