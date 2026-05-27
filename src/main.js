@@ -262,43 +262,7 @@ function initAuthControls() {
   });
 }
 
-function initMenu() {
-  const menuButton = document.querySelector("#menu-button");
-  const menuPanel = document.querySelector("#menu-panel");
-
-  menuButton.addEventListener("click", () => {
-    const willOpen = menuPanel.hidden;
-    menuPanel.hidden = !willOpen;
-    menuButton.setAttribute("aria-expanded", String(willOpen));
-  });
-
-  menuPanel.addEventListener("click", (event) => {
-    if (event.target.closest("a")) {
-      menuPanel.hidden = true;
-      menuButton.setAttribute("aria-expanded", "false");
-    }
-  });
-
-  document.addEventListener("click", (event) => {
-    const clickedInsideMenu = menuPanel.contains(event.target);
-    const clickedButton = menuButton.contains(event.target);
-
-    if (!clickedInsideMenu && !clickedButton) {
-      menuPanel.hidden = true;
-      menuButton.setAttribute("aria-expanded", "false");
-    }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      menuPanel.hidden = true;
-      menuButton.setAttribute("aria-expanded", "false");
-    }
-  });
-}
-
 async function initRatings() {
-  initMenu();
   initRatingControls();
   initAuthControls();
 

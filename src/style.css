@@ -341,7 +341,7 @@ h2 {
 .rating-row {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
@@ -350,14 +350,16 @@ h2 {
 .stars {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  width: 100%;
 }
 
 .stars button {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   padding: 0;
   color: var(--muted);
   background: var(--paper);
@@ -374,8 +376,8 @@ h2 {
 
 .stars button img {
   display: block;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   opacity: 0.32;
   filter: grayscale(1);
@@ -558,9 +560,14 @@ h2 {
   }
 
   .stars button {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     font-size: 14px;
+  }
+
+  .stars button img {
+    width: 26px;
+    height: 26px;
   }
 
   .site-footer {
