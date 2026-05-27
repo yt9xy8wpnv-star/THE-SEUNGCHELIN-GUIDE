@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>토론의 장 | THE SEUNGCHELIN GUIDE</title>
+    <script type="module" src="/src/staticPage.js"></script>
+  </head>
+  <body class="info-page">
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="THE SEUNGCHELIN GUIDE 홈">
+        <span>THE</span>
+        <strong>SEUNGCHELIN</strong>
+        <span>GUIDE</span>
+      </a>
+      <nav class="nav-links" aria-label="주요 메뉴">
+        <button
+          class="menu-button"
+          id="menu-button"
+          type="button"
+          aria-label="메뉴 열기"
+          aria-expanded="false"
+          aria-controls="menu-panel"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
+      <div class="menu-panel" id="menu-panel" hidden>
+        <nav class="menu-list" aria-label="사이트 메뉴">
+          <a class="menu-item menu-item-primary" href="/mypage/">마이페이지</a>
+          <a class="menu-item" href="/story/">승슐랭 이야기</a>
+          <a class="menu-item" href="/scoring/">점수 평가 방식</a>
+          <a class="menu-item" href="/best-meals/">BEST 급식</a>
+          <a class="menu-item" href="/discussion/">토론의 장</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="info-main">
+      <section class="info-hero" aria-labelledby="page-title">
+        <div class="red-rule"></div>
+        <p class="eyebrow">의견 공간</p>
+        <h1 id="page-title">토론의 장</h1>
+        <p class="hero-text">급식 메뉴, 평가 기준, 다음에 먹고 싶은 메뉴를 이야기하는 공간입니다.</p>
+      </section>
+
+      <section class="discussion-shell">
+        <article class="info-card">
+          <span>준비 중</span>
+          <h2>게시글 기능</h2>
+          <p>로그인한 사용자만 글을 남기도록 만들고, 권한에 따라 관리할 수 있습니다.</p>
+        </article>
+        <article class="info-card">
+          <span>다음 단계</span>
+          <h2>댓글과 추천</h2>
+          <p>토론 글마다 댓글과 추천을 붙이면 급식 개선 의견을 더 쉽게 모을 수 있습니다.</p>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>점수 평가 방식 | THE SEUNGCHELIN GUIDE</title>
+    <script type="module" src="/src/staticPage.js"></script>
+  </head>
+  <body class="info-page">
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="THE SEUNGCHELIN GUIDE 홈">
+        <span>THE</span>
+        <strong>SEUNGCHELIN</strong>
+        <span>GUIDE</span>
+      </a>
+      <nav class="nav-links" aria-label="주요 메뉴">
+        <button
+          class="menu-button"
+          id="menu-button"
+          type="button"
+          aria-label="메뉴 열기"
+          aria-expanded="false"
+          aria-controls="menu-panel"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
+      <div class="menu-panel" id="menu-panel" hidden>
+        <nav class="menu-list" aria-label="사이트 메뉴">
+          <a class="menu-item menu-item-primary" href="/mypage/">마이페이지</a>
+          <a class="menu-item" href="/story/">승슐랭 이야기</a>
+          <a class="menu-item" href="/scoring/">점수 평가 방식</a>
+          <a class="menu-item" href="/best-meals/">BEST 급식</a>
+          <a class="menu-item" href="/discussion/">토론의 장</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="info-main">
+      <section class="info-hero" aria-labelledby="page-title">
+        <div class="red-rule"></div>
+        <p class="eyebrow">평가 기준</p>
+        <h1 id="page-title">점수 평가 방식</h1>
+        <p class="hero-text">승슐랭은 0스타부터 3스타까지 간단한 기준으로 기록합니다.</p>
+      </section>
+
+      <section class="score-list" aria-label="점수 기준">
+        <article>
+          <strong>0스타</strong>
+          <p>평가하지 않았거나 특별한 인상을 남기지 못한 급식입니다.</p>
+        </article>
+        <article>
+          <strong>1스타</strong>
+          <p>무난하게 먹을 수 있었지만 아쉬운 점이 남은 급식입니다.</p>
+        </article>
+        <article>
+          <strong>2스타</strong>
+          <p>구성과 맛이 안정적이고 다시 먹고 싶은 급식입니다.</p>
+        </article>
+        <article>
+          <strong>3스타</strong>
+          <p>오늘의 대표 메뉴로 추천할 만큼 만족도가 높은 급식입니다.</p>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

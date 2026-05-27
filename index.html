@@ -14,7 +14,6 @@
         <span>GUIDE</span>
       </a>
       <nav class="nav-links" aria-label="주요 메뉴">
-        <a href="#meals">급식</a>
         <button
           class="menu-button"
           id="menu-button"
@@ -29,7 +28,13 @@
         </button>
       </nav>
       <div class="menu-panel" id="menu-panel" hidden>
-        <a href="#meals">급식 보기</a>
+        <nav class="menu-list" aria-label="사이트 메뉴">
+          <a class="menu-item menu-item-primary" href="/mypage/">마이페이지</a>
+          <a class="menu-item" href="/story/">승슐랭 이야기</a>
+          <a class="menu-item" href="/scoring/">점수 평가 방식</a>
+          <a class="menu-item" href="/best-meals/">BEST 급식</a>
+          <a class="menu-item" href="/discussion/">토론의 장</a>
+        </nav>
         <div class="auth-panel" aria-label="평가 권한">
           <p id="auth-status">로컬 데모 모드</p>
           <form id="auth-form">
@@ -54,7 +59,7 @@
           </form>
           <a class="signup-link" href="/signup/">회원가입</a>
           <div class="account-panel" id="account-panel" hidden>
-            <span>마이페이지</span>
+            <span>계정</span>
             <strong id="account-username">사용자</strong>
             <p id="account-permission">평가 권한 확인 중</p>
           </div>
@@ -98,6 +103,22 @@
                   <button type="button" aria-label="아침 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
                 </div>
               </div>
+              <form class="review-form" data-review-form>
+                <label>
+                  <span>한줄평</span>
+                  <textarea
+                    data-review-input
+                    rows="2"
+                    maxlength="220"
+                    placeholder="오늘의 한 끼를 짧게 기록해보세요"
+                    aria-label="아침 한줄평"
+                  ></textarea>
+                </label>
+                <div class="review-actions">
+                  <small data-review-count>0/30 단어</small>
+                  <button type="submit">저장</button>
+                </div>
+              </form>
             </div>
           </article>
 
@@ -114,6 +135,22 @@
                   <button type="button" aria-label="점심 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
                 </div>
               </div>
+              <form class="review-form" data-review-form>
+                <label>
+                  <span>한줄평</span>
+                  <textarea
+                    data-review-input
+                    rows="2"
+                    maxlength="220"
+                    placeholder="오늘의 한 끼를 짧게 기록해보세요"
+                    aria-label="점심 한줄평"
+                  ></textarea>
+                </label>
+                <div class="review-actions">
+                  <small data-review-count>0/30 단어</small>
+                  <button type="submit">저장</button>
+                </div>
+              </form>
             </div>
           </article>
 
@@ -130,6 +167,22 @@
                   <button type="button" aria-label="저녁 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
                 </div>
               </div>
+              <form class="review-form" data-review-form>
+                <label>
+                  <span>한줄평</span>
+                  <textarea
+                    data-review-input
+                    rows="2"
+                    maxlength="220"
+                    placeholder="오늘의 한 끼를 짧게 기록해보세요"
+                    aria-label="저녁 한줄평"
+                  ></textarea>
+                </label>
+                <div class="review-actions">
+                  <small data-review-count>0/30 단어</small>
+                  <button type="submit">저장</button>
+                </div>
+              </form>
             </div>
           </article>
         </div>

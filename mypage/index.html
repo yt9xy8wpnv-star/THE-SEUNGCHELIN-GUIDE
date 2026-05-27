@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>마이페이지 | THE SEUNGCHELIN GUIDE</title>
+    <script type="module" src="/src/mypage.js"></script>
+  </head>
+  <body class="info-page">
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="THE SEUNGCHELIN GUIDE 홈">
+        <span>THE</span>
+        <strong>SEUNGCHELIN</strong>
+        <span>GUIDE</span>
+      </a>
+      <nav class="nav-links" aria-label="주요 메뉴">
+        <button
+          class="menu-button"
+          id="menu-button"
+          type="button"
+          aria-label="메뉴 열기"
+          aria-expanded="false"
+          aria-controls="menu-panel"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
+      <div class="menu-panel" id="menu-panel" hidden>
+        <nav class="menu-list" aria-label="사이트 메뉴">
+          <a class="menu-item menu-item-primary" href="/mypage/">마이페이지</a>
+          <a class="menu-item" href="/story/">승슐랭 이야기</a>
+          <a class="menu-item" href="/scoring/">점수 평가 방식</a>
+          <a class="menu-item" href="/best-meals/">BEST 급식</a>
+          <a class="menu-item" href="/discussion/">토론의 장</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="info-main">
+      <section class="info-hero" aria-labelledby="page-title">
+        <div class="red-rule"></div>
+        <p class="eyebrow">내 평가 기록</p>
+        <h1 id="page-title">마이페이지</h1>
+        <p class="hero-text" id="mypage-status">내 정보를 불러오는 중입니다.</p>
+      </section>
+
+      <section class="info-grid">
+        <article class="info-card profile-card">
+          <span>아이디</span>
+          <strong id="mypage-username">확인 중</strong>
+          <p id="mypage-permission">평가 권한 확인 중</p>
+        </article>
+        <article class="info-card wide-card">
+          <span>평가 기록</span>
+          <ul class="mypage-ratings" id="mypage-ratings">
+            <li>기록을 불러오는 중입니다.</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

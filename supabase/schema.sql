@@ -31,16 +31,42 @@ create table if not exists public.ratings (
   meal_id text not null references public.meals(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   score int not null check (score between 0 and 3),
+  one_line_review text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, meal_id)
 );
 
 alter table public.ratings
+add column if not exists one_line_review text not null default '';
+
+update public.ratings
+set one_line_review = ''
+where one_line_review is null;
+
+alter table public.ratings
+alter column one_line_review set default '';
+
+alter table public.ratings
+alter column one_line_review set not null;
+
+alter table public.ratings
+alter column score set default 0;
+
+alter table public.ratings
 drop constraint if exists ratings_score_check;
 
 alter table public.ratings
 add constraint ratings_score_check check (score between 0 and 3);
+
+alter table public.ratings
+drop constraint if exists ratings_one_line_review_words_check;
+
+alter table public.ratings
+add constraint ratings_one_line_review_words_check check (
+  trim(one_line_review) = ''
+  or cardinality(regexp_split_to_array(trim(one_line_review), '\s+')) <= 30
+);
 
 alter table public.profiles enable row level security;
 alter table public.meals enable row level security;
