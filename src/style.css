@@ -254,6 +254,27 @@ h1 {
   cursor: pointer;
 }
 
+.password-field {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.password-field button {
+  min-height: 38px;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.auth-panel .password-field input,
+.signup-card .password-field input {
+  width: 100%;
+}
+
 [hidden] {
   display: none !important;
 }
@@ -326,6 +347,14 @@ h1 {
   background: var(--red);
   border: 1px solid var(--red);
   cursor: pointer;
+}
+
+.signup-card .password-field button {
+  margin-top: 0;
+  min-height: 44px;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
 }
 
 .signup-card a {

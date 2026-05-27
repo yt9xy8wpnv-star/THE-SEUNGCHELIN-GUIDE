@@ -205,7 +205,14 @@ function initAuthControls() {
       password,
     });
 
-    renderAuthStatus(error ? "아이디 또는 비밀번호를 확인해주세요." : "로그인되었습니다.");
+    if (error) {
+      renderAuthStatus("아이디 또는 비밀번호를 확인해주세요.");
+      return;
+    }
+
+    passwordInput.value = "";
+    await loadUserRatingState();
+    renderRatings();
   });
 
   signOutButton.addEventListener("click", async () => {
@@ -214,7 +221,22 @@ function initAuthControls() {
   });
 }
 
+function initPasswordToggles() {
+  document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+    const input = document.querySelector(`#${button.dataset.passwordToggle}`);
+
+    if (!input) return;
+
+    button.addEventListener("click", () => {
+      const shouldShow = input.type === "password";
+      input.type = shouldShow ? "text" : "password";
+      button.textContent = shouldShow ? "숨김" : "보기";
+    });
+  });
+}
+
 async function initRatings() {
+  initPasswordToggles();
   initRatingControls();
   initAuthControls();
 

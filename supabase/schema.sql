@@ -60,7 +60,9 @@ begin
     nullif(lower(new.raw_user_meta_data->>'username'), ''),
     false
   )
-  on conflict (id) do update set email = excluded.email;
+  on conflict (id) do update set
+    email = excluded.email,
+    username = coalesce(excluded.username, public.profiles.username);
   return new;
 end;
 $$;
@@ -69,6 +71,17 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+insert into public.profiles (id, email, username, can_rate)
+select
+  id,
+  email,
+  nullif(lower(raw_user_meta_data->>'username'), ''),
+  false
+from auth.users
+on conflict (id) do update set
+  email = excluded.email,
+  username = coalesce(excluded.username, public.profiles.username);
 
 create or replace function public.can_current_user_rate()
 returns boolean
@@ -99,6 +112,32 @@ as $$
 $$;
 
 grant execute on function public.get_email_for_username(text) to anon, authenticated;
+
+create or replace function public.set_current_user_profile(profile_username text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'not authenticated';
+  end if;
+
+  insert into public.profiles (id, email, username, can_rate)
+  values (
+    auth.uid(),
+    auth.jwt()->>'email',
+    nullif(lower(trim(profile_username)), ''),
+    false
+  )
+  on conflict (id) do update set
+    email = excluded.email,
+    username = coalesce(excluded.username, public.profiles.username);
+end;
+$$;
+
+grant execute on function public.set_current_user_profile(text) to authenticated;
 
 create or replace function public.touch_updated_at()
 returns trigger

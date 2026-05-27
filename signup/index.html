@@ -53,23 +53,29 @@
           </label>
           <label>
             <span>비밀번호</span>
-            <input
-              id="signup-password"
-              type="password"
-              autocomplete="new-password"
-              minlength="6"
-              required
-            />
+            <div class="password-field">
+              <button type="button" data-password-toggle="signup-password">보기</button>
+              <input
+                id="signup-password"
+                type="password"
+                autocomplete="new-password"
+                minlength="6"
+                required
+              />
+            </div>
           </label>
           <label>
             <span>비밀번호 확인</span>
-            <input
-              id="signup-password-confirm"
-              type="password"
-              autocomplete="new-password"
-              minlength="6"
-              required
-            />
+            <div class="password-field">
+              <button type="button" data-password-toggle="signup-password-confirm">보기</button>
+              <input
+                id="signup-password-confirm"
+                type="password"
+                autocomplete="new-password"
+                minlength="6"
+                required
+              />
+            </div>
           </label>
           <button type="submit">회원가입</button>
           <a href="/">이미 계정이 있어요</a>

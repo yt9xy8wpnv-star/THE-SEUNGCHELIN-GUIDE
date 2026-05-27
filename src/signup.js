@@ -12,6 +12,20 @@ function setStatus(message) {
   status.textContent = message;
 }
 
+function initPasswordToggles() {
+  document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+    const input = document.querySelector(`#${button.dataset.passwordToggle}`);
+
+    if (!input) return;
+
+    button.addEventListener("click", () => {
+      const shouldShow = input.type === "password";
+      input.type = shouldShow ? "text" : "password";
+      button.textContent = shouldShow ? "숨김" : "보기";
+    });
+  });
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -62,6 +76,10 @@ form.addEventListener("submit", async (event) => {
   }
 
   if (data.session) {
+    await supabase.rpc("set_current_user_profile", {
+      profile_username: username,
+    });
+
     setStatus("회원가입이 완료되었습니다. 승인 후 평가할 수 있습니다.");
     window.setTimeout(() => {
       window.location.href = "/";
@@ -69,5 +87,10 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  setStatus("회원가입이 완료되었습니다. 이메일 확인 후 승인되면 평가할 수 있습니다.");
+  setStatus("회원가입이 완료되었습니다. 메인으로 이동합니다.");
+  window.setTimeout(() => {
+    window.location.href = "/";
+  }, 700);
 });
+
+initPasswordToggles();
