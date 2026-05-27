@@ -506,10 +506,22 @@ h1 {
   border-top: 1px solid var(--line);
 }
 
-.score-list strong {
-  color: var(--red);
-  font-size: 22px;
-  font-weight: 400;
+.score-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.score-star {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.score-star.inactive {
+  opacity: 0.24;
+  filter: grayscale(1);
 }
 
 .score-list p {
@@ -692,6 +704,54 @@ h2 {
   color: var(--red);
 }
 
+.review-display {
+  display: block;
+  width: 100%;
+  min-height: 58px;
+  margin-top: 16px;
+  padding: 8px 12px;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.65;
+  text-align: center;
+  word-break: keep-all;
+  cursor: pointer;
+}
+
+.review-display span::before,
+.review-display span::after {
+  color: var(--red);
+  font-weight: 400;
+}
+
+.review-display span::before {
+  content: "\"";
+  margin-right: 6px;
+}
+
+.review-display span::after {
+  content: "\"";
+  margin-left: 6px;
+}
+
+.review-display[data-empty="true"] {
+  color: var(--muted);
+}
+
+.review-display:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.review-display:focus-visible {
+  outline: 1px solid rgba(189, 31, 50, 0.32);
+  outline-offset: 5px;
+}
+
 .review-form {
   display: grid;
   gap: 10px;
@@ -759,7 +819,7 @@ h2 {
 
 .review-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
 }
@@ -779,6 +839,11 @@ h2 {
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+}
+
+.review-actions [data-review-cancel] {
+  color: var(--muted);
+  border-color: var(--line);
 }
 
 .review-actions button:disabled {

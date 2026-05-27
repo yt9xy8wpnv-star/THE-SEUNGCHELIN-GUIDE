@@ -3,7 +3,9 @@ import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 
 const STORAGE_KEY = "seungchelin-ratings";
 const REVIEW_STORAGE_KEY = "seungchelin-reviews";
-const REVIEW_WORD_LIMIT = 30;
+const REVIEW_CHARACTER_LIMIT = 30;
+const REVIEW_EMPTY_TEXT = "한줄평을 남겨보세요";
+const REVIEW_LOCKED_TEXT = "승인 후 한줄평 작성 가능";
 
 const defaultRatings = {
   breakfast: 0,
@@ -51,12 +53,16 @@ function saveLocalReviews(reviews) {
   localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(reviews));
 }
 
-function getReviewWords(value) {
-  return value.trim().split(/\s+/).filter(Boolean);
+function cleanReviewText(value) {
+  return value.replace(/\s+/g, " ").trim();
 }
 
-function limitReviewWords(value) {
-  return getReviewWords(value).slice(0, REVIEW_WORD_LIMIT).join(" ");
+function getReviewLength(value) {
+  return Array.from(cleanReviewText(value)).length;
+}
+
+function limitReviewText(value) {
+  return Array.from(cleanReviewText(value)).slice(0, REVIEW_CHARACTER_LIMIT).join("");
 }
 
 function updateReviewCount(form) {
@@ -65,7 +71,24 @@ function updateReviewCount(form) {
 
   if (!input || !count) return;
 
-  count.textContent = `${getReviewWords(input.value).length}/${REVIEW_WORD_LIMIT} 단어`;
+  count.textContent = `${getReviewLength(input.value)}/${REVIEW_CHARACTER_LIMIT}자`;
+}
+
+function setReviewEditing(card, editing) {
+  const display = card.querySelector("[data-review-display]");
+  const form = card.querySelector("[data-review-form]");
+  const input = form?.querySelector("[data-review-input]");
+
+  if (!display || !form || !input) return;
+
+  display.hidden = editing;
+  form.hidden = !editing;
+
+  if (editing) {
+    input.value = state.userReviews[card.dataset.meal] || "";
+    updateReviewCount(form);
+    input.focus();
+  }
 }
 
 function setCardRating(card, activeValue) {
@@ -85,9 +108,16 @@ function setRatingEnabled(enabled) {
 }
 
 function setReviewEnabled(enabled) {
-  document.querySelectorAll("[data-review-form]").forEach((form) => {
-    const input = form.querySelector("[data-review-input]");
-    const button = form.querySelector('button[type="submit"]');
+  document.querySelectorAll(".meal-card").forEach((card) => {
+    const display = card.querySelector("[data-review-display]");
+    const form = card.querySelector("[data-review-form]");
+    const input = form?.querySelector("[data-review-input]");
+    const button = form?.querySelector('button[type="submit"]');
+    const cancelButton = form?.querySelector("[data-review-cancel]");
+
+    if (display) {
+      display.disabled = !enabled;
+    }
 
     if (input) {
       input.disabled = !enabled;
@@ -98,6 +128,10 @@ function setReviewEnabled(enabled) {
 
     if (button) {
       button.disabled = !enabled;
+    }
+
+    if (cancelButton) {
+      cancelButton.disabled = !enabled;
     }
   });
 }
@@ -115,13 +149,21 @@ function renderRatings() {
 function renderReviews() {
   document.querySelectorAll(".meal-card").forEach((card) => {
     const meal = card.dataset.meal;
+    const display = card.querySelector("[data-review-display]");
+    const displayText = card.querySelector("[data-review-display-text]");
     const form = card.querySelector("[data-review-form]");
     const input = form?.querySelector("[data-review-input]");
 
-    if (!form || !input) return;
+    if (!display || !displayText || !form || !input) return;
 
-    input.value = state.userReviews[meal] || "";
+    const review = state.userReviews[meal] || "";
+    const fallbackText = state.canRate ? REVIEW_EMPTY_TEXT : REVIEW_LOCKED_TEXT;
+
+    displayText.textContent = review || fallbackText;
+    display.dataset.empty = String(!review);
+    input.value = review;
     updateReviewCount(form);
+    setReviewEditing(card, false);
   });
 
   setReviewEnabled(state.canRate);
@@ -275,19 +317,30 @@ function initRatingControls() {
 function initReviewControls() {
   document.querySelectorAll(".meal-card").forEach((card) => {
     const meal = card.dataset.meal;
+    const display = card.querySelector("[data-review-display]");
     const form = card.querySelector("[data-review-form]");
     const input = form?.querySelector("[data-review-input]");
+    const cancelButton = form?.querySelector("[data-review-cancel]");
 
     if (!form || !input) return;
 
-    input.addEventListener("input", () => {
-      const limitedValue = limitReviewWords(input.value);
+    display?.addEventListener("click", () => {
+      if (!state.canRate) return;
+      setReviewEditing(card, true);
+    });
 
-      if (getReviewWords(input.value).length > REVIEW_WORD_LIMIT) {
+    input.addEventListener("input", () => {
+      const limitedValue = limitReviewText(input.value);
+
+      if (getReviewLength(input.value) > REVIEW_CHARACTER_LIMIT) {
         input.value = limitedValue;
       }
 
       updateReviewCount(form);
+    });
+
+    cancelButton?.addEventListener("click", () => {
+      setReviewEditing(card, false);
     });
 
     form.addEventListener("submit", async (event) => {
@@ -295,7 +348,7 @@ function initReviewControls() {
 
       if (!state.canRate) return;
 
-      const review = limitReviewWords(input.value);
+      const review = limitReviewText(input.value);
       input.value = review;
       updateReviewCount(form);
 

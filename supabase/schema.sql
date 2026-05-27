@@ -63,9 +63,17 @@ alter table public.ratings
 drop constraint if exists ratings_one_line_review_words_check;
 
 alter table public.ratings
-add constraint ratings_one_line_review_words_check check (
+drop constraint if exists ratings_one_line_review_length_check;
+
+update public.ratings
+set one_line_review = left(trim(regexp_replace(one_line_review, '\s+', ' ', 'g')), 30)
+where char_length(trim(regexp_replace(one_line_review, '\s+', ' ', 'g'))) > 30
+  or one_line_review <> trim(regexp_replace(one_line_review, '\s+', ' ', 'g'));
+
+alter table public.ratings
+add constraint ratings_one_line_review_length_check check (
   trim(one_line_review) = ''
-  or cardinality(regexp_split_to_array(trim(one_line_review), '\s+')) <= 30
+  or char_length(trim(one_line_review)) <= 30
 );
 
 alter table public.profiles enable row level security;
