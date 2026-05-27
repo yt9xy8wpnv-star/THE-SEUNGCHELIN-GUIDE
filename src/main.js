@@ -2,7 +2,6 @@ import "./style.css";
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 
 const STORAGE_KEY = "seungchelin-ratings";
-const mealOrder = ["breakfast", "lunch", "dinner"];
 
 const defaultRatings = {
   breakfast: 0,
@@ -10,14 +9,7 @@ const defaultRatings = {
   dinner: 0,
 };
 
-const mealNames = {
-  breakfast: "아침",
-  lunch: "점심",
-  dinner: "저녁",
-};
-
 const state = {
-  averages: { ...defaultRatings },
   canRate: !isSupabaseConfigured,
   user: null,
   username: "",
@@ -37,41 +29,13 @@ function saveLocalRatings(ratings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(ratings));
 }
 
-function formatScore(value) {
-  return Number(value || 0).toFixed(1);
-}
-
-function setCardRating(card, activeValue, displayValue = activeValue) {
+function setCardRating(card, activeValue) {
   const buttons = card.querySelectorAll(".stars button");
 
   buttons.forEach((button) => {
     const buttonValue = Number(button.dataset.value);
     button.classList.toggle("active", buttonValue === activeValue);
     button.setAttribute("aria-checked", String(buttonValue === activeValue));
-  });
-}
-
-function updateSummary(ratings) {
-  const values = Object.values(ratings).filter((score) => score >= 0);
-  const average =
-    values.length === 0
-      ? 0
-      : values.reduce((sum, score) => sum + score, 0) / values.length;
-
-  document.querySelector("#average-score").textContent = formatScore(average);
-
-  const rankedMeals = [...mealOrder].sort((a, b) => {
-    if (ratings[b] === ratings[a]) {
-      return mealOrder.indexOf(a) - mealOrder.indexOf(b);
-    }
-    return ratings[b] - ratings[a];
-  });
-
-  const listItems = document.querySelectorAll(".rank-list li");
-  rankedMeals.forEach((meal, index) => {
-    const item = listItems[index];
-    item.querySelector("span").textContent = mealNames[meal];
-    item.querySelector("strong").textContent = formatScore(ratings[meal]);
   });
 }
 
@@ -84,10 +48,9 @@ function setRatingEnabled(enabled) {
 function renderRatings() {
   document.querySelectorAll(".meal-card").forEach((card) => {
     const meal = card.dataset.meal;
-    setCardRating(card, state.userRatings[meal], state.averages[meal]);
+    setCardRating(card, state.userRatings[meal]);
   });
 
-  updateSummary(state.averages);
   setRatingEnabled(state.canRate);
 }
 
@@ -106,34 +69,6 @@ function renderAuthStatus(message) {
 
   form.hidden = Boolean(state.user);
   signOutButton.hidden = !state.user;
-}
-
-async function loadSupabaseRatings() {
-  const { data, error } = await supabase.from("ratings").select("meal_id, score");
-
-  if (error) {
-    renderAuthStatus("평가 데이터를 불러오지 못했습니다.");
-    return;
-  }
-
-  const grouped = mealOrder.reduce((result, meal) => {
-    result[meal] = [];
-    return result;
-  }, {});
-
-  data.forEach((rating) => {
-    if (grouped[rating.meal_id]) {
-      grouped[rating.meal_id].push(rating.score);
-    }
-  });
-
-  mealOrder.forEach((meal) => {
-    const scores = grouped[meal];
-    state.averages[meal] =
-      scores.length === 0
-        ? 0
-        : scores.reduce((sum, score) => sum + score, 0) / scores.length;
-  });
 }
 
 async function loadUserRatingState() {
@@ -192,7 +127,6 @@ async function saveSupabaseRating(meal, score) {
   }
 
   state.userRatings[meal] = score;
-  await loadSupabaseRatings();
   renderRatings();
 }
 
@@ -205,11 +139,12 @@ function initRatingControls() {
       button.addEventListener("click", async () => {
         if (!state.canRate) return;
 
-        const value = Number(button.dataset.value);
+        const selectedValue = Number(button.dataset.value);
+        const currentValue = state.userRatings[meal];
+        const value = currentValue === selectedValue ? 0 : selectedValue;
 
         if (!isSupabaseConfigured) {
           state.userRatings[meal] = value;
-          state.averages = { ...state.userRatings };
           saveLocalRatings(state.userRatings);
           renderRatings();
           return;
@@ -268,13 +203,11 @@ async function initRatings() {
 
   if (!isSupabaseConfigured) {
     state.userRatings = loadLocalRatings();
-    state.averages = { ...state.userRatings };
     renderAuthStatus("로컬 데모 모드");
     renderRatings();
     return;
   }
 
-  await loadSupabaseRatings();
   await loadUserRatingState();
   renderRatings();
 

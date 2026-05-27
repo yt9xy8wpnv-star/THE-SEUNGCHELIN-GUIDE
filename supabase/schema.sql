@@ -2,12 +2,15 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   username text,
-  can_rate boolean not null default false,
+  can_rate boolean not null default true,
   created_at timestamptz not null default now()
 );
 
 alter table public.profiles
 add column if not exists username text;
+
+alter table public.profiles
+alter column can_rate set default true;
 
 create unique index if not exists profiles_username_key
 on public.profiles (lower(username))
@@ -50,8 +53,13 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email)
-  values (new.id, new.email)
+  insert into public.profiles (id, email, username, can_rate)
+  values (
+    new.id,
+    new.email,
+    nullif(lower(new.raw_user_meta_data->>'username'), ''),
+    true
+  )
   on conflict (id) do update set email = excluded.email;
   return new;
 end;

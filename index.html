@@ -15,7 +15,6 @@
       </a>
       <nav class="nav-links" aria-label="주요 메뉴">
         <a href="#meals">급식</a>
-        <a href="#rank">랭킹</a>
         <button
           class="menu-button"
           id="menu-button"
@@ -31,7 +30,6 @@
       </nav>
       <div class="menu-panel" id="menu-panel" hidden>
         <a href="#meals">급식 보기</a>
-        <a href="#rank">랭킹 보기</a>
         <div class="auth-panel" aria-label="평가 권한">
           <p id="auth-status">로컬 데모 모드</p>
           <form id="auth-form">
@@ -51,6 +49,7 @@
             />
             <button type="submit">로그인</button>
           </form>
+          <a class="signup-link" href="/signup/">회원가입</a>
           <button id="sign-out-button" type="button" hidden>로그아웃</button>
         </div>
       </div>
@@ -65,10 +64,6 @@
           <p class="hero-text">
             아침, 점심, 저녁 급식을 한눈에 보고 별점을 남겨보세요.
           </p>
-        </div>
-        <div class="today-panel" aria-label="오늘의 요약">
-          <span>2026.05.27</span>
-          <strong>평균 별점 <b id="average-score">0.0</b></strong>
         </div>
       </section>
 
@@ -90,7 +85,6 @@
               <p class="menu-list">김가루 주먹밥, 요구르트, 배추김치</p>
               <div class="rating-row">
                 <div class="stars" role="radiogroup" aria-label="아침 별점">
-                  <button class="zero-star" type="button" aria-label="아침 0스타" data-value="0">0</button>
                   <button type="button" aria-label="아침 1스타" data-value="1"><img src="/rate/MichelinStar.png" alt="" /></button>
                   <button type="button" aria-label="아침 2스타" data-value="2"><img src="/rate/MichelinStar.png" alt="" /></button>
                   <button type="button" aria-label="아침 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
@@ -107,7 +101,6 @@
               <p class="menu-list">콘치즈, 오이무침, 깍두기</p>
               <div class="rating-row">
                 <div class="stars" role="radiogroup" aria-label="점심 별점">
-                  <button class="zero-star" type="button" aria-label="점심 0스타" data-value="0">0</button>
                   <button type="button" aria-label="점심 1스타" data-value="1"><img src="/rate/MichelinStar.png" alt="" /></button>
                   <button type="button" aria-label="점심 2스타" data-value="2"><img src="/rate/MichelinStar.png" alt="" /></button>
                   <button type="button" aria-label="점심 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
@@ -124,7 +117,6 @@
               <p class="menu-list">양배추 샐러드, 단무지, 사과주스</p>
               <div class="rating-row">
                 <div class="stars" role="radiogroup" aria-label="저녁 별점">
-                  <button class="zero-star" type="button" aria-label="저녁 0스타" data-value="0">0</button>
                   <button type="button" aria-label="저녁 1스타" data-value="1"><img src="/rate/MichelinStar.png" alt="" /></button>
                   <button type="button" aria-label="저녁 2스타" data-value="2"><img src="/rate/MichelinStar.png" alt="" /></button>
                   <button type="button" aria-label="저녁 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
@@ -133,20 +125,6 @@
             </div>
           </article>
         </div>
-      </section>
-
-      <section class="rank-section" id="rank" aria-labelledby="rank-title">
-        <div class="section-heading compact">
-          <div>
-            <div class="red-rule"></div>
-            <h2 id="rank-title">오늘의 랭킹</h2>
-          </div>
-        </div>
-        <ol class="rank-list">
-          <li><span>점심</span><strong id="rank-lunch">0.0</strong></li>
-          <li><span>저녁</span><strong id="rank-dinner">0.0</strong></li>
-          <li><span>아침</span><strong id="rank-breakfast">0.0</strong></li>
-        </ol>
       </section>
     </main>
 

@@ -191,6 +191,11 @@ h1 {
   border: 0;
 }
 
+.signup-link {
+  color: var(--red) !important;
+  font-size: 14px !important;
+}
+
 .auth-panel p {
   margin-bottom: 0;
   color: var(--muted);
@@ -235,6 +240,77 @@ h1 {
   font-weight: 300;
 }
 
+.signup-page {
+  min-height: 100vh;
+  background: var(--soft);
+}
+
+.signup-main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 72px 48px;
+}
+
+.signup-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  align-items: start;
+  gap: 72px;
+}
+
+.signup-card {
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.signup-card p {
+  margin-bottom: 2px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.signup-card label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.signup-card input,
+.signup-card button {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 4px;
+  font: inherit;
+}
+
+.signup-card input {
+  padding: 0 12px;
+  color: var(--ink);
+  background: var(--soft);
+  border: 1px solid var(--line);
+}
+
+.signup-card button {
+  margin-top: 4px;
+  color: var(--paper);
+  background: var(--red);
+  border: 1px solid var(--red);
+  cursor: pointer;
+}
+
+.signup-card a {
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  text-decoration: none;
+}
+
 .today-panel strong {
   font-size: 22px;
   font-weight: 400;
@@ -245,8 +321,7 @@ h1 {
   font-weight: 400;
 }
 
-.meal-section,
-.rank-section {
+.meal-section {
   max-width: 1280px;
   margin: 0 auto;
   padding: 8px 48px 68px;
@@ -411,45 +486,6 @@ h2 {
   border-color: var(--red);
 }
 
-.stars .zero-star {
-  font-weight: 400;
-}
-
-.rank-section {
-  padding-top: 10px;
-}
-
-.rank-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.rank-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 76px;
-  padding: 0 22px;
-  background: var(--soft);
-  border-top: 3px solid var(--red);
-}
-
-.rank-list span {
-  color: var(--muted);
-  font-size: 17px;
-  font-weight: 300;
-}
-
-.rank-list strong {
-  color: var(--red);
-  font-size: 25px;
-  font-weight: 400;
-}
-
 .site-footer {
   display: flex;
   justify-content: space-between;
@@ -480,14 +516,13 @@ h2 {
     font-size: 18px;
   }
 
-  .meal-section,
-  .rank-section {
+  .meal-section {
     padding-right: 26px;
     padding-left: 26px;
   }
 
   .meal-grid,
-  .rank-list {
+  .signup-shell {
     grid-template-columns: 1fr;
   }
 
@@ -537,8 +572,7 @@ h2 {
     min-width: 0;
   }
 
-  .meal-section,
-  .rank-section {
+  .meal-section {
     padding-bottom: 54px;
   }
 
@@ -574,5 +608,13 @@ h2 {
     flex-direction: column;
     padding-right: 26px;
     padding-left: 26px;
+  }
+
+  .signup-main {
+    padding: 42px 26px;
+  }
+
+  .signup-card {
+    padding: 22px 18px;
   }
 }
