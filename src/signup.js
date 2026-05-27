@@ -25,6 +25,17 @@ function emailForUsername(username) {
   return `${username}@${INTERNAL_EMAIL_DOMAIN}`;
 }
 
+function messageForSignupError(error) {
+  const message = error?.message || "알 수 없는 오류";
+  const normalizedMessage = message.toLowerCase();
+
+  if (normalizedMessage.includes("email rate limit")) {
+    return "Supabase 이메일 발송 제한에 걸렸습니다. Supabase에서 Confirm email을 끄고, 잠시 뒤 다시 시도해주세요.";
+  }
+
+  return `회원가입 실패: ${message}`;
+}
+
 function initPasswordToggles() {
   document.querySelectorAll("[data-password-toggle]").forEach((button) => {
     const input = document.querySelector(`#${button.dataset.passwordToggle}`);
@@ -99,7 +110,7 @@ form.addEventListener("submit", async (event) => {
     });
 
     if (error) {
-      setStatus(`회원가입 실패: ${error.message}`);
+      setStatus(messageForSignupError(error));
       return;
     }
 
