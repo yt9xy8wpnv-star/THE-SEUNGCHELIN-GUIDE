@@ -147,18 +147,9 @@ create or replace function public.complete_signup_profile(
 returns void
 language plpgsql
 security definer
-set search_path = public, auth
+set search_path = public
 as $$
 begin
-  perform 1
-  from auth.users
-  where auth.users.id = new_user_id
-    and lower(auth.users.email) = lower(trim(user_email));
-
-  if not found then
-    raise exception 'signup user not found';
-  end if;
-
   insert into public.profiles (id, email, username, can_rate)
   values (
     new_user_id,
@@ -168,7 +159,7 @@ begin
   )
   on conflict (id) do update set
     email = excluded.email,
-    username = coalesce(public.profiles.username, excluded.username);
+    username = coalesce(excluded.username, public.profiles.username);
 end;
 $$;
 

@@ -87,7 +87,7 @@ form.addEventListener("submit", async (event) => {
   });
 
   if (profileError) {
-    setStatus("회원 정보 저장에 실패했습니다. 관리자에게 문의해주세요.");
+    setStatus(`회원 정보 저장 실패: ${profileError.message}`);
     return;
   }
 
