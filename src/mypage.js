@@ -118,5 +118,5 @@ async function loadMyPage() {
   }
 }
 
-initMenu({ onAuthChange: loadMyPage });
+initMenu({ onAuthChange: loadMyPage, preloadAuth: false });
 loadMyPage();

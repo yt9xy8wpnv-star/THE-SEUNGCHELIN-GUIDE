@@ -39,6 +39,8 @@ const selectedDateLabel = document.querySelector("#selected-date-label");
 const prevDateButton = document.querySelector("#prev-date-button");
 const nextDateButton = document.querySelector("#next-date-button");
 const todayDate = getKoreaDate();
+let mealLoadSerial = 0;
+let authRefreshSerial = 0;
 
 const state = {
   canRate: !isSupabaseConfigured,
@@ -200,8 +202,8 @@ function sortMeals(meals) {
   });
 }
 
-function keepDateBasedMeals(meals) {
-  return meals.filter((meal) => meal.id.startsWith(`${state.selectedDate}-`));
+function keepDateBasedMeals(meals, date = state.selectedDate) {
+  return meals.filter((meal) => meal.id.startsWith(`${date}-`));
 }
 
 function getDemoMeals(date) {
@@ -518,42 +520,53 @@ function renderMeals() {
 }
 
 async function loadMealsForSelectedDate({ updateUrl = true } = {}) {
+  const requestId = ++mealLoadSerial;
+  const targetDate = state.selectedDate;
+
   state.isLoadingMeals = true;
   renderDateControls();
   renderMeals();
 
-  if (!isSupabaseConfigured) {
-    state.meals = getDemoMeals(state.selectedDate);
-    state.canRate = true;
+  try {
+    if (!isSupabaseConfigured) {
+      state.meals = getDemoMeals(targetDate);
+      state.canRate = true;
+      resetMealFeedbackState();
+      state.userRatings = { ...state.userRatings, ...loadLocalMap(STORAGE_KEY) };
+      state.userReviews = { ...state.userReviews, ...loadLocalMap(REVIEW_STORAGE_KEY) };
+      renderAuthStatus("로컬 데모 모드");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("meals")
+      .select("id, meal_date, meal_slot, title, menu, image_path")
+      .eq("meal_date", targetDate);
+
+    if (requestId !== mealLoadSerial || targetDate !== state.selectedDate) return;
+
+    if (error) {
+      state.meals = [];
+      renderAuthStatus("급식 정보를 불러오지 못했습니다.");
+    } else {
+      state.meals = sortMeals(keepDateBasedMeals(data ?? [], targetDate));
+    }
+
     resetMealFeedbackState();
-    state.userRatings = { ...state.userRatings, ...loadLocalMap(STORAGE_KEY) };
-    state.userReviews = { ...state.userReviews, ...loadLocalMap(REVIEW_STORAGE_KEY) };
+    await loadUserRatingState();
+  } catch {
+    if (requestId !== mealLoadSerial || targetDate !== state.selectedDate) return;
+
+    state.meals = [];
+    renderAuthStatus("급식 정보를 불러오지 못했습니다.");
+  } finally {
+    if (requestId !== mealLoadSerial || targetDate !== state.selectedDate) return;
+
     state.isLoadingMeals = false;
-    renderAuthStatus("로컬 데모 모드");
     renderDateControls();
     renderMeals();
     if (updateUrl) syncDateToUrl();
-    return;
   }
-
-  const { data, error } = await supabase
-    .from("meals")
-    .select("id, meal_date, meal_slot, title, menu, image_path")
-    .eq("meal_date", state.selectedDate);
-
-  if (error) {
-    state.meals = [];
-    renderAuthStatus("급식 정보를 불러오지 못했습니다.");
-  } else {
-    state.meals = sortMeals(keepDateBasedMeals(data ?? []));
-  }
-
-  resetMealFeedbackState();
-  await loadUserRatingState();
-  state.isLoadingMeals = false;
-  renderDateControls();
-  renderMeals();
-  if (updateUrl) syncDateToUrl();
 }
 
 async function loadUserRatingState() {
@@ -722,6 +735,20 @@ async function changeSelectedDate(days) {
 
   state.selectedDate = nextDate;
   await loadMealsForSelectedDate();
+}
+
+function scheduleAuthRefresh() {
+  const requestId = ++authRefreshSerial;
+
+  window.setTimeout(async () => {
+    if (requestId !== authRefreshSerial || state.isLoadingMeals) return;
+
+    await loadUserRatingState();
+
+    if (requestId !== authRefreshSerial || state.isLoadingMeals) return;
+
+    renderMeals();
+  }, 0);
 }
 
 function initDateControls() {
@@ -907,9 +934,8 @@ async function initRatings() {
   await loadMealsForSelectedDate({ updateUrl: false });
 
   if (isSupabaseConfigured) {
-    supabase.auth.onAuthStateChange(async () => {
-      await loadUserRatingState();
-      renderMeals();
+    supabase.auth.onAuthStateChange(() => {
+      scheduleAuthRefresh();
     });
   }
 }

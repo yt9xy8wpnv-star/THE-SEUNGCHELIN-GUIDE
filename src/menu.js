@@ -72,9 +72,11 @@ function renderMenuAuthStatus(menuPanel, { user = null, profile = null, message 
 
   if (isLoggedIn) {
     accountUsername.textContent = profile?.username || user.email || "사용자";
-    accountPermission.textContent = profile?.can_rate
-      ? "평가 권한 승인됨"
-      : "평가 권한 승인 대기";
+    accountPermission.textContent = profile
+      ? profile.can_rate
+        ? "평가 권한 승인됨"
+        : "평가 권한 승인 대기"
+      : "평가 권한 확인 중";
   }
 }
 
@@ -95,6 +97,7 @@ async function withTimeout(promise, message) {
 
 async function loadMenuAuth(menuPanel, message = "", knownSession = undefined) {
   const requestId = ++menuAuthRequestSerial;
+  let session = null;
 
   try {
     if (!isSupabaseConfigured) {
@@ -102,7 +105,7 @@ async function loadMenuAuth(menuPanel, message = "", knownSession = undefined) {
       return;
     }
 
-    const session =
+    session =
       knownSession ??
       (
         await withTimeout(
@@ -137,6 +140,15 @@ async function loadMenuAuth(menuPanel, message = "", knownSession = undefined) {
     });
   } catch {
     if (requestId !== menuAuthRequestSerial) return;
+
+    if (session?.user) {
+      renderMenuAuthStatus(menuPanel, {
+        user: session.user,
+        message: message || "로그인됨",
+      });
+      return;
+    }
+
     renderMenuAuthStatus(menuPanel, {
       message: "로그인 상태를 확인하지 못했습니다.",
     });
@@ -157,7 +169,7 @@ function initPasswordToggles(menuPanel) {
   });
 }
 
-function initMenuAuth(menuPanel, onAuthChange) {
+function initMenuAuth(menuPanel, onAuthChange, { preloadAuth = true } = {}) {
   ensureAuthPanel(menuPanel);
   initPasswordToggles(menuPanel);
 
@@ -166,7 +178,9 @@ function initMenuAuth(menuPanel, onAuthChange) {
   const passwordInput = menuPanel.querySelector("#auth-password");
   const signOutButton = menuPanel.querySelector("#sign-out-button");
 
-  loadMenuAuth(menuPanel);
+  if (preloadAuth) {
+    loadMenuAuth(menuPanel);
+  }
 
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -216,17 +230,21 @@ function initMenuAuth(menuPanel, onAuthChange) {
   });
 
   if (isSupabaseConfigured) {
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "INITIAL_SESSION") return;
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "INITIAL_SESSION" && (!session || !preloadAuth)) return;
 
-      await loadMenuAuth(menuPanel, "", session);
-      onAuthChange?.();
+      window.setTimeout(async () => {
+        await loadMenuAuth(menuPanel, "", session);
+        if (event !== "INITIAL_SESSION") {
+          onAuthChange?.();
+        }
+      }, 0);
     });
   }
 }
 
 export function initMenu(options = {}) {
-  const { auth = true, onAuthChange } = options;
+  const { auth = true, onAuthChange, preloadAuth = true } = options;
   const menuButton = document.querySelector("#menu-button");
   const menuPanel = document.querySelector("#menu-panel");
 
@@ -242,6 +260,10 @@ export function initMenu(options = {}) {
     const willOpen = menuPanel.hidden;
     menuPanel.hidden = !willOpen;
     menuButton.setAttribute("aria-expanded", String(willOpen));
+
+    if (willOpen && auth) {
+      loadMenuAuth(menuPanel);
+    }
   });
 
   menuPanel.addEventListener("click", (event) => {
@@ -255,6 +277,6 @@ export function initMenu(options = {}) {
   });
 
   if (auth) {
-    initMenuAuth(menuPanel, onAuthChange);
+    initMenuAuth(menuPanel, onAuthChange, { preloadAuth });
   }
 }

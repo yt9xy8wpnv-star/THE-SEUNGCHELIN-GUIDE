@@ -20,6 +20,9 @@ const bestGrid = document.querySelector("#best-grid");
 let bestLoadSerial = 0;
 const state = {
   canManageBest: false,
+  lastBestMeals: [],
+  lastMealsById: {},
+  lastRatingSummary: {},
 };
 
 function escapeHtml(value) {
@@ -93,6 +96,10 @@ function getMenuItems(meal) {
 }
 
 function renderEmpty(message) {
+  state.lastBestMeals = [];
+  state.lastMealsById = {};
+  state.lastRatingSummary = {};
+
   bestGrid.innerHTML = `
     <div class="best-empty">
       <img src="/rate/MichelinStar.png" alt="" />
@@ -100,6 +107,11 @@ function renderEmpty(message) {
       <p>메인 페이지에서 승인된 평가자가 급식을 BEST로 보내면 이곳에 표시됩니다.</p>
     </div>
   `;
+}
+
+function renderLatestBestCards() {
+  if (!state.lastBestMeals.length) return;
+  renderBestCards(state.lastBestMeals, state.lastMealsById, state.lastRatingSummary);
 }
 
 function getInFilter(values) {
@@ -183,13 +195,13 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
 async function loadBestPermission() {
   state.canManageBest = false;
 
-  if (!isSupabaseConfigured) return;
+  if (!isSupabaseConfigured) return false;
 
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session?.user) return;
+  if (!session?.user) return false;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -198,6 +210,7 @@ async function loadBestPermission() {
     .maybeSingle();
 
   state.canManageBest = Boolean(profile?.can_rate);
+  return state.canManageBest;
 }
 
 async function loadBestMeals() {
@@ -252,7 +265,10 @@ async function loadBestMeals() {
     }
 
     bestStatus.textContent = `최근 ${visibleBestMeals.length}개`;
-    renderBestCards(visibleBestMeals, mealsById, ratingSummary);
+    state.lastBestMeals = visibleBestMeals;
+    state.lastMealsById = mealsById;
+    state.lastRatingSummary = ratingSummary;
+    renderLatestBestCards();
   } catch (error) {
     if (requestId !== bestLoadSerial) return;
 
@@ -280,8 +296,10 @@ async function removeBestMeal(mealId) {
 }
 
 async function refreshBestPage() {
-  await loadBestPermission();
+  const permissionPromise = loadBestPermission();
   await loadBestMeals();
+  await permissionPromise;
+  renderLatestBestCards();
 }
 
 bestGrid.addEventListener("click", (event) => {
@@ -293,4 +311,4 @@ bestGrid.addEventListener("click", (event) => {
 });
 
 refreshBestPage();
-initMenu({ onAuthChange: refreshBestPage });
+initMenu({ onAuthChange: refreshBestPage, preloadAuth: false });

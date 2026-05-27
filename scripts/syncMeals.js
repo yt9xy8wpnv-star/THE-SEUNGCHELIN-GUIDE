@@ -14,6 +14,7 @@ const IMAGE_BY_SLOT = {
   lunch: "/assets/lunch.png",
   dinner: "/assets/dinner.png",
 };
+const DEFAULT_IMAGE_PATHS = new Set(Object.values(IMAGE_BY_SLOT));
 
 function loadEnvFile(filePath) {
   try {
@@ -214,6 +215,8 @@ async function upsertMeals(rows) {
     },
   });
 
+  await preserveCustomImagePaths(supabase, rows);
+
   const { error } = await supabase.from("meals").upsert(rows, {
     onConflict: "id",
   });
@@ -221,6 +224,37 @@ async function upsertMeals(rows) {
   if (error) {
     throw new Error(`Supabase 저장 실패: ${error.message}`);
   }
+}
+
+function shouldPreserveImagePath(imagePath) {
+  return Boolean(imagePath && !DEFAULT_IMAGE_PATHS.has(imagePath));
+}
+
+async function preserveCustomImagePaths(supabase, rows) {
+  const ids = rows.map((row) => row.id);
+  if (ids.length === 0) return;
+
+  const { data, error } = await supabase
+    .from("meals")
+    .select("id, image_path")
+    .in("id", ids);
+
+  if (error) {
+    throw new Error(`기존 급식 이미지 확인 실패: ${error.message}`);
+  }
+
+  const existingImages = new Map(
+    (data ?? [])
+      .filter((row) => shouldPreserveImagePath(row.image_path))
+      .map((row) => [row.id, row.image_path]),
+  );
+
+  rows.forEach((row) => {
+    const existingImagePath = existingImages.get(row.id);
+    if (existingImagePath) {
+      row.image_path = existingImagePath;
+    }
+  });
 }
 
 function printMealSummary(rows, date, dryRun) {
