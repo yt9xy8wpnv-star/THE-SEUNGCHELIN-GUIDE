@@ -139,6 +139,41 @@ $$;
 
 grant execute on function public.set_current_user_profile(text) to authenticated;
 
+create or replace function public.complete_signup_profile(
+  new_user_id uuid,
+  user_email text,
+  profile_username text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+begin
+  perform 1
+  from auth.users
+  where auth.users.id = new_user_id
+    and lower(auth.users.email) = lower(trim(user_email));
+
+  if not found then
+    raise exception 'signup user not found';
+  end if;
+
+  insert into public.profiles (id, email, username, can_rate)
+  values (
+    new_user_id,
+    lower(trim(user_email)),
+    nullif(lower(trim(profile_username)), ''),
+    false
+  )
+  on conflict (id) do update set
+    email = excluded.email,
+    username = coalesce(public.profiles.username, excluded.username);
+end;
+$$;
+
+grant execute on function public.complete_signup_profile(uuid, text, text) to anon, authenticated;
+
 create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql

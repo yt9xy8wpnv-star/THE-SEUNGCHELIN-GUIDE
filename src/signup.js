@@ -75,6 +75,22 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (!data.user) {
+    setStatus("회원가입 정보를 확인하지 못했습니다. 다시 시도해주세요.");
+    return;
+  }
+
+  const { error: profileError } = await supabase.rpc("complete_signup_profile", {
+    new_user_id: data.user.id,
+    user_email: email,
+    profile_username: username,
+  });
+
+  if (profileError) {
+    setStatus("회원 정보 저장에 실패했습니다. 관리자에게 문의해주세요.");
+    return;
+  }
+
   if (data.session) {
     await supabase.rpc("set_current_user_profile", {
       profile_username: username,
