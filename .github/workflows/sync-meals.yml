@@ -1,0 +1,40 @@
+name: Sync school meals
+
+on:
+  schedule:
+    # GitHub Actions uses UTC. This runs every day at 00:20 in Korea.
+    - cron: "20 15 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: sync-school-meals
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Fetch NEIS meals and save to Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NEIS_API_KEY: ${{ secrets.NEIS_API_KEY }}
+      NEIS_OFFICE_CODE: ${{ vars.NEIS_OFFICE_CODE || 'M10' }}
+      NEIS_SCHOOL_CODE: ${{ vars.NEIS_SCHOOL_CODE || '8000066' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync meal window
+        run: npm run sync:meals -- --window

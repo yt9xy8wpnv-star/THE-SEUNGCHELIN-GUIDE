@@ -78,11 +78,6 @@ function summarizeRatings(ratings) {
   return summary;
 }
 
-function getMealTitle(meal) {
-  const menu = Array.isArray(meal.menu) ? meal.menu.filter(Boolean) : [];
-  return meal.title || menu.slice(0, 2).join(" · ") || "급식 정보";
-}
-
 function getMenuItems(meal) {
   const menu = Array.isArray(meal.menu) ? meal.menu : [];
   const rawMenuItems = (menu.length ? menu : [meal.title])
@@ -153,15 +148,14 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
 
       return `
         <article class="best-card">
-          <img src="${escapeHtml(meal.image_path || "/assets/lunch.png")}" alt="${escapeHtml(getMealTitle(meal))}" />
+          <img src="${escapeHtml(meal.image_path || "/assets/lunch.png")}" alt="${escapeHtml(SLOT_LABELS[meal.meal_slot] || "급식")} 이미지" />
           <div class="best-card-body">
             <span>${escapeHtml(formatDate(meal.meal_date))} · ${escapeHtml(SLOT_LABELS[meal.meal_slot] || "급식")}</span>
-            <h2>${escapeHtml(getMealTitle(meal))}</h2>
             <ul>${menuItems}</ul>
             <div class="best-card-stars" aria-label="평균 별점 ${summary.score || 0}스타">
               ${renderStars(summary.score || 0)}
             </div>
-            <p>"${escapeHtml(review)}"</p>
+            <p class="best-review">"${escapeHtml(review)}"</p>
           </div>
         </article>
       `;
