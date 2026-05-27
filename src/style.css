@@ -110,13 +110,14 @@ a {
 
 .brand {
   display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  color: var(--red);
-  font-size: 24px;
-  font-weight: 300;
+  align-items: center;
   text-decoration: none;
-  white-space: nowrap;
+}
+
+.brand img {
+  display: block;
+  width: min(292px, 52vw);
+  height: auto;
 }
 
 .brand strong {
@@ -593,6 +594,7 @@ h1 {
 }
 
 .best-card {
+  position: relative;
   overflow: hidden;
   background: var(--paper);
   border: 1px solid var(--line);
@@ -657,8 +659,39 @@ h1 {
   color: var(--ink);
   font-size: 16px;
   line-height: 1.7;
-  text-align: center;
+  text-align: left;
   word-break: keep-all;
+}
+
+.best-delete-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  min-width: 52px;
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--red);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(189, 31, 50, 0.42);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.best-delete-button:hover,
+.best-delete-button:focus-visible {
+  background: var(--red);
+  color: var(--paper);
+  outline: 0;
+}
+
+.best-delete-button:disabled {
+  color: var(--muted);
+  border-color: var(--line);
+  cursor: not-allowed;
+  opacity: 0.68;
 }
 
 .best-empty {
@@ -1312,8 +1345,11 @@ h2 {
   }
 
   .brand {
-    gap: 4px;
-    font-size: 17px;
+    max-width: calc(100vw - 86px);
+  }
+
+  .brand img {
+    width: min(224px, 100%);
   }
 
   .nav-links {

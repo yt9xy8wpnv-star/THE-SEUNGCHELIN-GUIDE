@@ -15,19 +15,19 @@ const SLOT_META = {
   breakfast: {
     englishLabel: "breakfast",
     koreanLabel: "아침",
-    title: "아침급식",
+    title: "아침 식사",
     fallbackImage: "/assets/breakfast.png",
   },
   lunch: {
     englishLabel: "lunch",
     koreanLabel: "점심",
-    title: "점심급식",
+    title: "점심 식사",
     fallbackImage: "/assets/lunch.png",
   },
   dinner: {
     englishLabel: "dinner",
     koreanLabel: "저녁",
-    title: "저녁급식",
+    title: "저녁 식사",
     fallbackImage: "/assets/dinner.png",
   },
 };
@@ -398,8 +398,9 @@ function renderDateControls() {
   const readableDate = getReadableDate(state.selectedDate);
   const diff = getDayDifference(state.selectedDate);
 
-  mealTitle.textContent = diff === 0 ? "오늘의 급식" : "선택한 날짜의 급식";
-  mealDateLabel.textContent = `${relativeLabel} · ${readableDate}`;
+  mealTitle.textContent = `${relativeLabel} · ${readableDate}`;
+  mealDateLabel.hidden = true;
+  mealDateLabel.textContent = "";
   selectedDateLabel.textContent = state.selectedDate;
   selectedDateLabel.dateTime = state.selectedDate;
   prevDateButton.disabled = diff <= -MAX_PAST_DAYS;

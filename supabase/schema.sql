@@ -236,6 +236,24 @@ $$;
 
 grant execute on function public.add_best_meal(text) to authenticated;
 
+create or replace function public.remove_best_meal(target_meal_id text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or not public.can_current_user_rate() then
+    raise exception 'not allowed';
+  end if;
+
+  delete from public.best_meals
+  where meal_id = target_meal_id;
+end;
+$$;
+
+grant execute on function public.remove_best_meal(text) to authenticated;
+
 create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql

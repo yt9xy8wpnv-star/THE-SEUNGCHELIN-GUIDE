@@ -2,6 +2,7 @@ import "./style.css";
 import { initMenu } from "./menu.js";
 import {
   isSupabaseConfigured,
+  supabase,
   supabaseAnonKey,
   supabaseUrl,
 } from "./supabaseClient.js";
@@ -17,6 +18,9 @@ const SLOT_LABELS = {
 const bestStatus = document.querySelector("#best-status");
 const bestGrid = document.querySelector("#best-grid");
 let bestLoadSerial = 0;
+const state = {
+  canManageBest: false,
+};
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -145,9 +149,22 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
         .map((item) => `<li>${escapeHtml(item)}</li>`)
         .join("");
       const review = summary.review || "아직 미식가가 다녀가지 않음";
+      const removeButton = state.canManageBest
+        ? `
+          <button
+            class="best-delete-button"
+            type="button"
+            data-remove-best="${escapeHtml(bestMeal.meal_id)}"
+            aria-label="BEST 급식에서 삭제"
+          >
+            삭제
+          </button>
+        `
+        : "";
 
       return `
         <article class="best-card">
+          ${removeButton}
           <img src="${escapeHtml(meal.image_path || "/assets/lunch.png")}" alt="${escapeHtml(SLOT_LABELS[meal.meal_slot] || "급식")} 이미지" />
           <div class="best-card-body">
             <span>${escapeHtml(formatDate(meal.meal_date))} · ${escapeHtml(SLOT_LABELS[meal.meal_slot] || "급식")}</span>
@@ -161,6 +178,26 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
       `;
     })
     .join("");
+}
+
+async function loadBestPermission() {
+  state.canManageBest = false;
+
+  if (!isSupabaseConfigured) return;
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.user) return;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("can_rate")
+    .eq("id", session.user.id)
+    .maybeSingle();
+
+  state.canManageBest = Boolean(profile?.can_rate);
 }
 
 async function loadBestMeals() {
@@ -225,5 +262,35 @@ async function loadBestMeals() {
   }
 }
 
-loadBestMeals();
-initMenu({ onAuthChange: loadBestMeals });
+async function removeBestMeal(mealId) {
+  if (!state.canManageBest || !isSupabaseConfigured) return;
+
+  bestStatus.textContent = "BEST 급식에서 삭제하는 중입니다.";
+
+  const { error } = await supabase.rpc("remove_best_meal", {
+    target_meal_id: mealId,
+  });
+
+  if (error) {
+    bestStatus.textContent = "BEST 급식을 삭제하지 못했습니다.";
+    return;
+  }
+
+  await loadBestMeals();
+}
+
+async function refreshBestPage() {
+  await loadBestPermission();
+  await loadBestMeals();
+}
+
+bestGrid.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-remove-best]");
+  if (!button) return;
+
+  button.disabled = true;
+  removeBestMeal(button.dataset.removeBest);
+});
+
+refreshBestPage();
+initMenu({ onAuthChange: refreshBestPage });

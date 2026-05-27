@@ -1,5 +1,6 @@
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 
+const REQUEST_TIMEOUT_MS = 10000;
 let menuAuthRequestSerial = 0;
 
 function getAuthPanelMarkup() {
@@ -77,40 +78,69 @@ function renderMenuAuthStatus(menuPanel, { user = null, profile = null, message 
   }
 }
 
+async function withTimeout(promise, message) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => {
+      reject(new Error(message));
+    }, REQUEST_TIMEOUT_MS);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 async function loadMenuAuth(menuPanel, message = "", knownSession = undefined) {
   const requestId = ++menuAuthRequestSerial;
 
-  if (!isSupabaseConfigured) {
-    renderMenuAuthStatus(menuPanel);
-    return;
+  try {
+    if (!isSupabaseConfigured) {
+      renderMenuAuthStatus(menuPanel);
+      return;
+    }
+
+    const session =
+      knownSession ??
+      (
+        await withTimeout(
+          supabase.auth.getSession(),
+          "로그인 상태 확인 시간이 초과되었습니다.",
+        )
+      ).data.session;
+
+    if (requestId !== menuAuthRequestSerial) return;
+
+    if (!session?.user) {
+      renderMenuAuthStatus(menuPanel, { message: message || "로그인이 필요합니다." });
+      return;
+    }
+
+    const { data: profile, error } = await withTimeout(
+      supabase
+        .from("profiles")
+        .select("username, can_rate")
+        .eq("id", session.user.id)
+        .maybeSingle(),
+      "계정 정보를 불러오는 시간이 초과되었습니다.",
+    );
+
+    if (error) throw new Error(error.message);
+    if (requestId !== menuAuthRequestSerial) return;
+
+    renderMenuAuthStatus(menuPanel, {
+      user: session.user,
+      profile,
+      message: message || "로그인됨",
+    });
+  } catch {
+    if (requestId !== menuAuthRequestSerial) return;
+    renderMenuAuthStatus(menuPanel, {
+      message: "로그인 상태를 확인하지 못했습니다.",
+    });
   }
-
-  const session =
-    knownSession ??
-    (
-      await supabase.auth.getSession()
-    ).data.session;
-
-  if (requestId !== menuAuthRequestSerial) return;
-
-  if (!session?.user) {
-    renderMenuAuthStatus(menuPanel, { message: message || "로그인이 필요합니다." });
-    return;
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("username, can_rate")
-    .eq("id", session.user.id)
-    .maybeSingle();
-
-  if (requestId !== menuAuthRequestSerial) return;
-
-  renderMenuAuthStatus(menuPanel, {
-    user: session.user,
-    profile,
-    message: message || "로그인됨",
-  });
 }
 
 function initPasswordToggles(menuPanel) {
@@ -187,11 +217,10 @@ function initMenuAuth(menuPanel, onAuthChange) {
 
   if (isSupabaseConfigured) {
     supabase.auth.onAuthStateChange(async (event, session) => {
-      await loadMenuAuth(menuPanel, "", session);
+      if (event === "INITIAL_SESSION") return;
 
-      if (event !== "INITIAL_SESSION") {
-        onAuthChange?.();
-      }
+      await loadMenuAuth(menuPanel, "", session);
+      onAuthChange?.();
     });
   }
 }
