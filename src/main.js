@@ -13,15 +13,15 @@ const MAX_FUTURE_DAYS = 7;
 const SLOT_ORDER = ["breakfast", "lunch", "dinner"];
 const SLOT_META = {
   breakfast: {
-    label: "아침",
+    label: "Breakfast",
     fallbackImage: "/assets/breakfast.png",
   },
   lunch: {
-    label: "점심",
+    label: "Lunch",
     fallbackImage: "/assets/lunch.png",
   },
   dinner: {
-    label: "저녁",
+    label: "Dinner",
     fallbackImage: "/assets/dinner.png",
   },
 };
