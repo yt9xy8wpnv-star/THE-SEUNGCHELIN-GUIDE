@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>THE SEUNGCHELIN GUIDE</title>
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="THE SEUNGCHELIN GUIDE 홈">
+        <span>THE</span>
+        <strong>SEUNGCHELIN</strong>
+        <span>GUIDE</span>
+      </a>
+      <nav class="nav-links" aria-label="주요 메뉴">
+        <a href="#meals">급식</a>
+        <a href="#rank">랭킹</a>
+        <button class="menu-button" type="button" aria-label="메뉴 열기">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <div class="red-rule"></div>
+          <p class="eyebrow">오늘의 급식 평가</p>
+          <h1 id="page-title">THE SEUNGCHELIN GUIDE</h1>
+          <p class="hero-text">
+            아침, 점심, 저녁 급식을 한눈에 보고 별점을 남겨보세요.
+          </p>
+        </div>
+        <div class="hero-side">
+          <div class="today-panel" aria-label="오늘의 요약">
+            <span>2026.05.27</span>
+            <strong>평균 별점 <b id="average-score">0.0</b></strong>
+          </div>
+          <div class="auth-panel" aria-label="평가 권한">
+            <p id="auth-status">로컬 데모 모드</p>
+            <form id="auth-form">
+              <input
+                id="auth-email"
+                type="email"
+                autocomplete="email"
+                placeholder="이메일"
+                aria-label="로그인 이메일"
+              />
+              <button type="submit">로그인 링크</button>
+            </form>
+            <button id="sign-out-button" type="button" hidden>로그아웃</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="meal-section" id="meals" aria-labelledby="meal-title">
+        <div class="section-heading">
+          <div>
+            <div class="red-rule"></div>
+            <h2 id="meal-title">오늘의 급식</h2>
+          </div>
+          <button class="arrow-button" type="button" aria-label="다음 급식 보기">›</button>
+        </div>
+
+        <div class="meal-grid">
+          <article class="meal-card" data-meal="breakfast">
+            <img src="/assets/breakfast.png" alt="아침 급식 트레이" />
+            <div class="meal-content">
+              <p class="meal-time">아침</p>
+              <h3>계란죽 · 과일 샐러드</h3>
+              <p class="menu-list">김가루 주먹밥, 요구르트, 배추김치</p>
+              <div class="rating-row">
+                <div class="stars" role="radiogroup" aria-label="아침 별점">
+                  <button type="button" aria-label="아침 1점" data-value="1">★</button>
+                  <button type="button" aria-label="아침 2점" data-value="2">★</button>
+                  <button type="button" aria-label="아침 3점" data-value="3">★</button>
+                  <button type="button" aria-label="아침 4점" data-value="4">★</button>
+                  <button type="button" aria-label="아침 5점" data-value="5">★</button>
+                </div>
+                <span class="score-label">0.0</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="meal-card featured" data-meal="lunch">
+            <img src="/assets/lunch.png" alt="점심 급식 트레이" />
+            <div class="meal-content">
+              <p class="meal-time">점심</p>
+              <h3>제육덮밥 · 미역국</h3>
+              <p class="menu-list">콘치즈, 오이무침, 깍두기</p>
+              <div class="rating-row">
+                <div class="stars" role="radiogroup" aria-label="점심 별점">
+                  <button type="button" aria-label="점심 1점" data-value="1">★</button>
+                  <button type="button" aria-label="점심 2점" data-value="2">★</button>
+                  <button type="button" aria-label="점심 3점" data-value="3">★</button>
+                  <button type="button" aria-label="점심 4점" data-value="4">★</button>
+                  <button type="button" aria-label="점심 5점" data-value="5">★</button>
+                </div>
+                <span class="score-label">0.0</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="meal-card" data-meal="dinner">
+            <img src="/assets/dinner.png" alt="저녁 급식 트레이" />
+            <div class="meal-content">
+              <p class="meal-time">저녁</p>
+              <h3>카레라이스 · 치킨너겟</h3>
+              <p class="menu-list">양배추 샐러드, 단무지, 사과주스</p>
+              <div class="rating-row">
+                <div class="stars" role="radiogroup" aria-label="저녁 별점">
+                  <button type="button" aria-label="저녁 1점" data-value="1">★</button>
+                  <button type="button" aria-label="저녁 2점" data-value="2">★</button>
+                  <button type="button" aria-label="저녁 3점" data-value="3">★</button>
+                  <button type="button" aria-label="저녁 4점" data-value="4">★</button>
+                  <button type="button" aria-label="저녁 5점" data-value="5">★</button>
+                </div>
+                <span class="score-label">0.0</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="rank-section" id="rank" aria-labelledby="rank-title">
+        <div class="section-heading compact">
+          <div>
+            <div class="red-rule"></div>
+            <h2 id="rank-title">오늘의 랭킹</h2>
+          </div>
+        </div>
+        <ol class="rank-list">
+          <li><span>점심</span><strong id="rank-lunch">0.0</strong></li>
+          <li><span>저녁</span><strong id="rank-dinner">0.0</strong></li>
+          <li><span>아침</span><strong id="rank-breakfast">0.0</strong></li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <strong>THE SEUNGCHELIN GUIDE</strong>
+      <span>급식의 기록은 오늘의 한 끼에서 시작됩니다.</span>
+    </footer>
+  </body>
+</html>
