@@ -438,7 +438,11 @@ function mealCardTemplate(meal) {
 
   return `
     <article class="meal-card${featured}" data-meal="${escapeHtml(meal.id)}">
-      <img src="${escapeHtml(imagePath)}" alt="${escapeHtml(slot.koreanLabel)} 급식 트레이" />
+      <img
+        src="${escapeHtml(imagePath)}"
+        alt="${escapeHtml(slot.koreanLabel)} 급식 트레이"
+        data-fallback-src="${escapeHtml(slot.fallbackImage)}"
+      />
       <div class="meal-content">
         <p class="meal-time">${escapeHtml(slot.englishLabel)}</p>
         <h3>${escapeHtml(title)}</h3>
@@ -762,6 +766,18 @@ function initDateControls() {
 }
 
 function initMealInteractions() {
+  mealGrid.addEventListener(
+    "error",
+    (event) => {
+      const image = event.target.closest(".meal-card > img");
+      if (!image || image.dataset.fallbackApplied === "true") return;
+
+      image.dataset.fallbackApplied = "true";
+      image.src = image.dataset.fallbackSrc;
+    },
+    true,
+  );
+
   mealGrid.addEventListener("click", async (event) => {
     const card = event.target.closest(".meal-card");
     if (!card) return;

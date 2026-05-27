@@ -157,6 +157,7 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
       if (!meal) return "";
 
       const summary = ratingSummary[bestMeal.meal_id] || {};
+      const fallbackImage = `/assets/${meal.meal_slot || "lunch"}.png`;
       const menuItems = getMenuItems(meal)
         .map((item) => `<li>${escapeHtml(item)}</li>`)
         .join("");
@@ -177,7 +178,11 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
       return `
         <article class="best-card">
           ${removeButton}
-          <img src="${escapeHtml(meal.image_path || "/assets/lunch.png")}" alt="${escapeHtml(SLOT_LABELS[meal.meal_slot] || "급식")} 이미지" />
+          <img
+            src="${escapeHtml(meal.image_path || fallbackImage)}"
+            alt="${escapeHtml(SLOT_LABELS[meal.meal_slot] || "급식")} 이미지"
+            data-fallback-src="${escapeHtml(fallbackImage)}"
+          />
           <div class="best-card-body">
             <span>${escapeHtml(formatDate(meal.meal_date))} · ${escapeHtml(SLOT_LABELS[meal.meal_slot] || "급식")}</span>
             <ul>${menuItems}</ul>
@@ -309,6 +314,18 @@ bestGrid.addEventListener("click", (event) => {
   button.disabled = true;
   removeBestMeal(button.dataset.removeBest);
 });
+
+bestGrid.addEventListener(
+  "error",
+  (event) => {
+    const image = event.target.closest(".best-card > img");
+    if (!image || image.dataset.fallbackApplied === "true") return;
+
+    image.dataset.fallbackApplied = "true";
+    image.src = image.dataset.fallbackSrc;
+  },
+  true,
+);
 
 refreshBestPage();
 initMenu({ onAuthChange: refreshBestPage, preloadAuth: false });
