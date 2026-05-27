@@ -1,6 +1,12 @@
 import "./style.css";
 import { initMenu } from "./menu.js";
-import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
+import {
+  isSupabaseConfigured,
+  supabaseAnonKey,
+  supabaseUrl,
+} from "./supabaseClient.js";
+
+const REQUEST_TIMEOUT_MS = 10000;
 
 const SLOT_LABELS = {
   breakfast: "아침",
@@ -10,6 +16,7 @@ const SLOT_LABELS = {
 
 const bestStatus = document.querySelector("#best-status");
 const bestGrid = document.querySelector("#best-grid");
+let bestLoadSerial = 0;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -78,11 +85,12 @@ function getMealTitle(meal) {
 
 function getMenuItems(meal) {
   const menu = Array.isArray(meal.menu) ? meal.menu : [];
-
-  return [meal.title, ...menu]
+  const rawMenuItems = (menu.length ? menu : [meal.title])
     .flatMap((item) => String(item || "").split(" · "))
     .map((item) => item.trim())
     .filter(Boolean);
+
+  return Array.from(new Set(rawMenuItems));
 }
 
 function renderEmpty(message) {
@@ -95,6 +103,42 @@ function renderEmpty(message) {
   `;
 }
 
+function getInFilter(values) {
+  return `in.(${values
+    .map((value) => `"${String(value).replaceAll('"', '\\"')}"`)
+    .join(",")})`;
+}
+
+async function fetchPublicRows(table, params) {
+  const url = new URL(`${supabaseUrl}/rest/v1/${table}`);
+  Object.entries(params).forEach(([key, value]) => {
+    url.searchParams.append(key, value);
+  });
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => {
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${supabaseAnonKey}`,
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return response.json();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 function renderBestCards(bestMeals, mealsById, ratingSummary) {
   bestGrid.innerHTML = bestMeals
     .map((bestMeal) => {
@@ -105,7 +149,7 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
       const menuItems = getMenuItems(meal)
         .map((item) => `<li>${escapeHtml(item)}</li>`)
         .join("");
-      const review = summary.review || "아직 한줄평이 없습니다";
+      const review = summary.review || "아직 미식가가 다녀가지 않음";
 
       return `
         <article class="best-card">
@@ -126,49 +170,66 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
 }
 
 async function loadBestMeals() {
+  const requestId = ++bestLoadSerial;
+
   if (!isSupabaseConfigured) {
     bestStatus.textContent = "Supabase 연결 후 사용할 수 있습니다.";
     renderEmpty("아직 BEST 급식이 없습니다.");
     return;
   }
 
-  const { data: bestMeals, error } = await supabase
-    .from("best_meals")
-    .select("id, meal_id, created_at")
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(10);
+  bestStatus.textContent = "BEST 급식을 불러오는 중입니다.";
 
-  if (error) {
-    bestStatus.textContent = "BEST 급식 테이블을 확인해주세요.";
-    renderEmpty("BEST 급식을 불러오지 못했습니다.");
-    return;
+  try {
+    const bestMeals = await fetchPublicRows("best_meals", {
+      select: "id,meal_id,created_at",
+      order: "created_at.desc,id.desc",
+      limit: "10",
+    });
+
+    if (requestId !== bestLoadSerial) return;
+
+    if (!bestMeals?.length) {
+      bestStatus.textContent = "아직 등록된 BEST 급식이 없습니다.";
+      renderEmpty("아직 BEST 급식이 없습니다.");
+      return;
+    }
+
+    const mealIds = bestMeals.map((meal) => meal.meal_id);
+    const mealFilter = getInFilter(mealIds);
+    const [meals, ratings] = await Promise.all([
+      fetchPublicRows("meals", {
+        select: "id,meal_date,meal_slot,title,menu,image_path",
+        id: mealFilter,
+      }),
+      fetchPublicRows("ratings", {
+        select: "meal_id,score,one_line_review,updated_at,created_at",
+        meal_id: mealFilter,
+      }),
+    ]);
+
+    if (requestId !== bestLoadSerial) return;
+
+    const mealsById = Object.fromEntries((meals ?? []).map((meal) => [meal.id, meal]));
+    const visibleBestMeals = bestMeals.filter((bestMeal) => mealsById[bestMeal.meal_id]);
+    const ratingSummary = summarizeRatings(ratings ?? []);
+
+    if (!visibleBestMeals.length) {
+      bestStatus.textContent = "BEST 급식과 연결된 식단이 없습니다.";
+      renderEmpty("BEST 급식을 표시할 수 없습니다.");
+      return;
+    }
+
+    bestStatus.textContent = `최근 ${visibleBestMeals.length}개`;
+    renderBestCards(visibleBestMeals, mealsById, ratingSummary);
+  } catch (error) {
+    if (requestId !== bestLoadSerial) return;
+
+    bestStatus.textContent = "BEST 급식을 불러오지 못했습니다.";
+    renderEmpty("잠시 후 다시 확인해주세요.");
+    console.error(error);
   }
-
-  if (!bestMeals?.length) {
-    bestStatus.textContent = "아직 등록된 BEST 급식이 없습니다.";
-    renderEmpty("아직 BEST 급식이 없습니다.");
-    return;
-  }
-
-  const mealIds = bestMeals.map((meal) => meal.meal_id);
-  const [{ data: meals }, { data: ratings }] = await Promise.all([
-    supabase
-      .from("meals")
-      .select("id, meal_date, meal_slot, title, menu, image_path")
-      .in("id", mealIds),
-    supabase
-      .from("ratings")
-      .select("meal_id, score, one_line_review, updated_at, created_at")
-      .in("meal_id", mealIds),
-  ]);
-
-  const mealsById = Object.fromEntries((meals ?? []).map((meal) => [meal.id, meal]));
-  const ratingSummary = summarizeRatings(ratings ?? []);
-
-  bestStatus.textContent = `최근 ${bestMeals.length}개`;
-  renderBestCards(bestMeals, mealsById, ratingSummary);
 }
 
-initMenu({ onAuthChange: loadBestMeals });
 loadBestMeals();
+initMenu({ onAuthChange: loadBestMeals });

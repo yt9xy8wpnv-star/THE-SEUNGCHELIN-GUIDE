@@ -5,23 +5,29 @@ import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 const STORAGE_KEY = "seungchelin-ratings";
 const REVIEW_STORAGE_KEY = "seungchelin-reviews";
 const REVIEW_CHARACTER_LIMIT = 30;
-const REVIEW_EMPTY_TEXT = "한줄평을 남겨보세요";
-const REVIEW_PUBLIC_EMPTY_TEXT = "아직 한줄평이 없습니다";
+const REVIEW_EMPTY_TEXT = "아직 미식가가 다녀가지 않음";
+const REVIEW_PUBLIC_EMPTY_TEXT = "아직 미식가가 다녀가지 않음";
 const KOREA_TIME_ZONE = "Asia/Seoul";
 const MAX_PAST_DAYS = 3;
 const MAX_FUTURE_DAYS = 7;
 const SLOT_ORDER = ["breakfast", "lunch", "dinner"];
 const SLOT_META = {
   breakfast: {
-    label: "Breakfast",
+    englishLabel: "breakfast",
+    koreanLabel: "아침",
+    title: "아침급식",
     fallbackImage: "/assets/breakfast.png",
   },
   lunch: {
-    label: "Lunch",
+    englishLabel: "lunch",
+    koreanLabel: "점심",
+    title: "점심급식",
     fallbackImage: "/assets/lunch.png",
   },
   dinner: {
-    label: "Dinner",
+    englishLabel: "dinner",
+    koreanLabel: "저녁",
+    title: "저녁급식",
     fallbackImage: "/assets/dinner.png",
   },
 };
@@ -415,29 +421,30 @@ function getNoMealMessage() {
 function mealCardTemplate(meal) {
   const slot = SLOT_META[meal.meal_slot] ?? SLOT_META.lunch;
   const menu = Array.isArray(meal.menu) ? meal.menu.filter(Boolean) : [];
-  const allMenuItems = [meal.title, ...menu]
+  const rawMenuItems = (menu.length ? menu : [meal.title])
     .flatMap((item) => String(item || "").split(" · "))
     .map((item) => item.trim())
     .filter(Boolean);
-  const title = `${slot.label} 급식`;
+  const menuItems = Array.from(new Set(rawMenuItems));
+  const title = slot.title;
   const imagePath = meal.image_path || slot.fallbackImage;
   const featured = meal.meal_slot === "lunch" ? " featured" : "";
-  const menuMarkup = allMenuItems
+  const menuMarkup = menuItems
     .map((item) => `<li>${escapeHtml(item)}</li>`)
     .join("");
 
   return `
     <article class="meal-card${featured}" data-meal="${escapeHtml(meal.id)}">
-      <img src="${escapeHtml(imagePath)}" alt="${escapeHtml(slot.label)} 급식 트레이" />
+      <img src="${escapeHtml(imagePath)}" alt="${escapeHtml(slot.koreanLabel)} 급식 트레이" />
       <div class="meal-content">
-        <p class="meal-time">${escapeHtml(slot.label)}</p>
+        <p class="meal-time">${escapeHtml(slot.englishLabel)}</p>
         <h3>${escapeHtml(title)}</h3>
         <ul class="meal-menu-list">${menuMarkup}</ul>
         <div class="rating-row">
-          <div class="stars" role="radiogroup" aria-label="${escapeHtml(slot.label)} 별점" data-rating-control>
-            <button type="button" aria-label="${escapeHtml(slot.label)} 1스타" data-value="1"><img src="/rate/MichelinStar.png" alt="" /></button>
-            <button type="button" aria-label="${escapeHtml(slot.label)} 2스타" data-value="2"><img src="/rate/MichelinStar.png" alt="" /></button>
-            <button type="button" aria-label="${escapeHtml(slot.label)} 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
+          <div class="stars" role="radiogroup" aria-label="${escapeHtml(slot.koreanLabel)} 별점" data-rating-control>
+            <button type="button" aria-label="${escapeHtml(slot.koreanLabel)} 1스타" data-value="1"><img src="/rate/MichelinStar.png" alt="" /></button>
+            <button type="button" aria-label="${escapeHtml(slot.koreanLabel)} 2스타" data-value="2"><img src="/rate/MichelinStar.png" alt="" /></button>
+            <button type="button" aria-label="${escapeHtml(slot.koreanLabel)} 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
           </div>
         </div>
         <button class="review-display" type="button" data-review-display>
@@ -451,7 +458,7 @@ function mealCardTemplate(meal) {
               rows="2"
               maxlength="${REVIEW_CHARACTER_LIMIT}"
               placeholder="오늘의 한 끼를 짧게 기록해보세요"
-              aria-label="${escapeHtml(slot.label)} 한줄평"
+              aria-label="${escapeHtml(slot.koreanLabel)} 한줄평"
             ></textarea>
           </label>
           <div class="review-actions">
@@ -464,7 +471,7 @@ function mealCardTemplate(meal) {
           <button
             class="meal-more-button"
             type="button"
-            aria-label="${escapeHtml(slot.label)} 급식 추가 메뉴"
+            aria-label="${escapeHtml(slot.koreanLabel)} 급식 추가 메뉴"
             aria-expanded="false"
             data-best-menu-button
           >
@@ -732,17 +739,18 @@ function initMealInteractions() {
     if (!card) return;
 
     const meal = card.dataset.meal;
-    const ratingControl = event.target.closest("[data-rating-control]");
+    const starButton = event.target.closest(".stars button");
     const display = event.target.closest("[data-review-display]");
     const cancelButton = event.target.closest("[data-review-cancel]");
     const bestMenuButton = event.target.closest("[data-best-menu-button]");
     const sendBestButton = event.target.closest("[data-send-best]");
 
-    if (ratingControl) {
+    if (starButton) {
       if (!state.canRate) return;
 
+      const selectedValue = Number(starButton.dataset.value);
       const currentValue = state.userRatings[meal] || 0;
-      const value = (currentValue + 1) % 4;
+      const value = currentValue === selectedValue ? 0 : selectedValue;
 
       if (!isSupabaseConfigured) {
         state.userRatings[meal] = value;

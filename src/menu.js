@@ -1,5 +1,7 @@
 import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 
+let menuAuthRequestSerial = 0;
+
 function getAuthPanelMarkup() {
   return `
     <div class="auth-panel" aria-label="평가 권한">
@@ -75,15 +77,21 @@ function renderMenuAuthStatus(menuPanel, { user = null, profile = null, message 
   }
 }
 
-async function loadMenuAuth(menuPanel, message = "") {
+async function loadMenuAuth(menuPanel, message = "", knownSession = undefined) {
+  const requestId = ++menuAuthRequestSerial;
+
   if (!isSupabaseConfigured) {
     renderMenuAuthStatus(menuPanel);
     return;
   }
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const session =
+    knownSession ??
+    (
+      await supabase.auth.getSession()
+    ).data.session;
+
+  if (requestId !== menuAuthRequestSerial) return;
 
   if (!session?.user) {
     renderMenuAuthStatus(menuPanel, { message: message || "로그인이 필요합니다." });
@@ -95,6 +103,8 @@ async function loadMenuAuth(menuPanel, message = "") {
     .select("username, can_rate")
     .eq("id", session.user.id)
     .maybeSingle();
+
+  if (requestId !== menuAuthRequestSerial) return;
 
   renderMenuAuthStatus(menuPanel, {
     user: session.user,
@@ -176,9 +186,12 @@ function initMenuAuth(menuPanel, onAuthChange) {
   });
 
   if (isSupabaseConfigured) {
-    supabase.auth.onAuthStateChange(async () => {
-      await loadMenuAuth(menuPanel);
-      onAuthChange?.();
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      await loadMenuAuth(menuPanel, "", session);
+
+      if (event !== "INITIAL_SESSION") {
+        onAuthChange?.();
+      }
     });
   }
 }

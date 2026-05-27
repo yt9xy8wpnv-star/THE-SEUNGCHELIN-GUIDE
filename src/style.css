@@ -16,6 +16,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -307,10 +311,6 @@ h1 {
 .auth-panel .password-field input,
 .signup-card .password-field input {
   width: 100%;
-}
-
-[hidden] {
-  display: none !important;
 }
 
 .today-panel span {
@@ -1080,9 +1080,9 @@ h2 {
 
 .meal-card-actions {
   position: absolute;
-  left: 16px;
-  bottom: 14px;
-  z-index: 2;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
 }
 
 .meal-more-button {
@@ -1110,8 +1110,8 @@ h2 {
 
 .meal-action-menu {
   position: absolute;
-  left: 0;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
+  right: 0;
   min-width: 174px;
   padding: 8px;
   background: rgba(255, 255, 255, 0.98);
