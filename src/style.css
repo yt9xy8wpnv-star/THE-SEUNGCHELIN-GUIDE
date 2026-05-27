@@ -589,8 +589,8 @@ h1 {
 
 .best-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px;
 }
 
 .best-card {
@@ -612,13 +612,13 @@ h1 {
 
 .best-card-body {
   display: grid;
-  gap: 9px;
-  padding: 15px;
+  gap: 11px;
+  padding: 18px;
 }
 
 .best-card-body span {
   color: var(--red);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .best-card-body ul {
@@ -629,8 +629,8 @@ h1 {
   margin: 0;
   padding: 0;
   color: var(--ink);
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.55;
   list-style: none;
   word-break: keep-all;
 }
@@ -638,13 +638,13 @@ h1 {
 .best-card-stars {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .best-star {
   display: block;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
   opacity: 0.22;
   filter: grayscale(1);
@@ -658,7 +658,7 @@ h1 {
 .best-card-body .best-review {
   margin-bottom: 0;
   color: var(--ink);
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.7;
   text-align: left;
   word-break: keep-all;
