@@ -20,6 +20,7 @@ const state = {
   averages: { ...defaultRatings },
   canRate: !isSupabaseConfigured,
   user: null,
+  username: "",
   userRatings: { ...defaultRatings },
 };
 
@@ -42,19 +43,16 @@ function formatScore(value) {
 
 function setCardRating(card, activeValue, displayValue = activeValue) {
   const buttons = card.querySelectorAll(".stars button");
-  const label = card.querySelector(".score-label");
 
   buttons.forEach((button) => {
     const buttonValue = Number(button.dataset.value);
-    button.classList.toggle("active", buttonValue <= activeValue);
+    button.classList.toggle("active", buttonValue === activeValue);
     button.setAttribute("aria-checked", String(buttonValue === activeValue));
   });
-
-  label.textContent = formatScore(displayValue);
 }
 
 function updateSummary(ratings) {
-  const values = Object.values(ratings).filter((score) => score > 0);
+  const values = Object.values(ratings).filter((score) => score >= 0);
   const average =
     values.length === 0
       ? 0
@@ -145,6 +143,7 @@ async function loadUserRatingState() {
 
   state.user = session?.user ?? null;
   state.canRate = false;
+  state.username = "";
   state.userRatings = { ...defaultRatings };
 
   if (!state.user) {
@@ -153,11 +152,16 @@ async function loadUserRatingState() {
   }
 
   const [{ data: profile }, { data: ratings }] = await Promise.all([
-    supabase.from("profiles").select("can_rate").eq("id", state.user.id).maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("can_rate, username")
+      .eq("id", state.user.id)
+      .maybeSingle(),
     supabase.from("ratings").select("meal_id, score").eq("user_id", state.user.id),
   ]);
 
   state.canRate = Boolean(profile?.can_rate);
+  state.username = profile?.username || state.user.email || "사용자";
 
   ratings?.forEach((rating) => {
     if (rating.meal_id in state.userRatings) {
@@ -167,8 +171,8 @@ async function loadUserRatingState() {
 
   renderAuthStatus(
     state.canRate
-      ? `${state.user.email} 평가 가능`
-      : `${state.user.email} 평가 권한 없음`,
+      ? `${state.username} 평가 가능`
+      : `${state.username} 평가 권한 없음`,
   );
 }
 
@@ -219,25 +223,37 @@ function initRatingControls() {
 
 function initAuthControls() {
   const form = document.querySelector("#auth-form");
-  const emailInput = document.querySelector("#auth-email");
+  const usernameInput = document.querySelector("#auth-username");
+  const passwordInput = document.querySelector("#auth-password");
   const signOutButton = document.querySelector("#sign-out-button");
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const email = emailInput.value.trim();
-    if (!email || !isSupabaseConfigured) return;
+    const username = usernameInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
+    if (!username || !password || !isSupabaseConfigured) return;
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin,
+    renderAuthStatus("로그인 확인 중입니다.");
+
+    const { data: lookup, error: lookupError } = await supabase.rpc(
+      "get_email_for_username",
+      {
+        login_username: username,
       },
+    );
+
+    if (lookupError || !lookup) {
+      renderAuthStatus("아이디 또는 비밀번호를 확인해주세요.");
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: lookup,
+      password,
     });
 
-    renderAuthStatus(
-      error ? "로그인 링크 전송에 실패했습니다." : "이메일로 로그인 링크를 보냈습니다.",
-    );
+    renderAuthStatus(error ? "아이디 또는 비밀번호를 확인해주세요." : "로그인되었습니다.");
   });
 
   signOutButton.addEventListener("click", async () => {
@@ -246,7 +262,43 @@ function initAuthControls() {
   });
 }
 
+function initMenu() {
+  const menuButton = document.querySelector("#menu-button");
+  const menuPanel = document.querySelector("#menu-panel");
+
+  menuButton.addEventListener("click", () => {
+    const willOpen = menuPanel.hidden;
+    menuPanel.hidden = !willOpen;
+    menuButton.setAttribute("aria-expanded", String(willOpen));
+  });
+
+  menuPanel.addEventListener("click", (event) => {
+    if (event.target.closest("a")) {
+      menuPanel.hidden = true;
+      menuButton.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    const clickedInsideMenu = menuPanel.contains(event.target);
+    const clickedButton = menuButton.contains(event.target);
+
+    if (!clickedInsideMenu && !clickedButton) {
+      menuPanel.hidden = true;
+      menuButton.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      menuPanel.hidden = true;
+      menuButton.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
 async function initRatings() {
+  initMenu();
   initRatingControls();
   initAuthControls();
 

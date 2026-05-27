@@ -16,12 +16,44 @@
       <nav class="nav-links" aria-label="주요 메뉴">
         <a href="#meals">급식</a>
         <a href="#rank">랭킹</a>
-        <button class="menu-button" type="button" aria-label="메뉴 열기">
+        <button
+          class="menu-button"
+          id="menu-button"
+          type="button"
+          aria-label="메뉴 열기"
+          aria-expanded="false"
+          aria-controls="menu-panel"
+        >
           <span></span>
           <span></span>
           <span></span>
         </button>
       </nav>
+      <div class="menu-panel" id="menu-panel" hidden>
+        <a href="#meals">급식 보기</a>
+        <a href="#rank">랭킹 보기</a>
+        <div class="auth-panel" aria-label="평가 권한">
+          <p id="auth-status">로컬 데모 모드</p>
+          <form id="auth-form">
+            <input
+              id="auth-username"
+              type="text"
+              autocomplete="username"
+              placeholder="아이디"
+              aria-label="로그인 아이디"
+            />
+            <input
+              id="auth-password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="비밀번호"
+              aria-label="로그인 비밀번호"
+            />
+            <button type="submit">로그인</button>
+          </form>
+          <button id="sign-out-button" type="button" hidden>로그아웃</button>
+        </div>
+      </div>
     </header>
 
     <main>
@@ -34,25 +66,9 @@
             아침, 점심, 저녁 급식을 한눈에 보고 별점을 남겨보세요.
           </p>
         </div>
-        <div class="hero-side">
-          <div class="today-panel" aria-label="오늘의 요약">
-            <span>2026.05.27</span>
-            <strong>평균 별점 <b id="average-score">0.0</b></strong>
-          </div>
-          <div class="auth-panel" aria-label="평가 권한">
-            <p id="auth-status">로컬 데모 모드</p>
-            <form id="auth-form">
-              <input
-                id="auth-email"
-                type="email"
-                autocomplete="email"
-                placeholder="이메일"
-                aria-label="로그인 이메일"
-              />
-              <button type="submit">로그인 링크</button>
-            </form>
-            <button id="sign-out-button" type="button" hidden>로그아웃</button>
-          </div>
+        <div class="today-panel" aria-label="오늘의 요약">
+          <span>2026.05.27</span>
+          <strong>평균 별점 <b id="average-score">0.0</b></strong>
         </div>
       </section>
 
@@ -74,13 +90,11 @@
               <p class="menu-list">김가루 주먹밥, 요구르트, 배추김치</p>
               <div class="rating-row">
                 <div class="stars" role="radiogroup" aria-label="아침 별점">
-                  <button type="button" aria-label="아침 1점" data-value="1">★</button>
-                  <button type="button" aria-label="아침 2점" data-value="2">★</button>
-                  <button type="button" aria-label="아침 3점" data-value="3">★</button>
-                  <button type="button" aria-label="아침 4점" data-value="4">★</button>
-                  <button type="button" aria-label="아침 5점" data-value="5">★</button>
+                  <button class="zero-star" type="button" aria-label="아침 0스타" data-value="0">0</button>
+                  <button type="button" aria-label="아침 1스타" data-value="1"><img src="/rate/MichelinStar.png" alt="" /></button>
+                  <button type="button" aria-label="아침 2스타" data-value="2"><img src="/rate/MichelinStar.png" alt="" /></button>
+                  <button type="button" aria-label="아침 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
                 </div>
-                <span class="score-label">0.0</span>
               </div>
             </div>
           </article>
@@ -93,13 +107,11 @@
               <p class="menu-list">콘치즈, 오이무침, 깍두기</p>
               <div class="rating-row">
                 <div class="stars" role="radiogroup" aria-label="점심 별점">
-                  <button type="button" aria-label="점심 1점" data-value="1">★</button>
-                  <button type="button" aria-label="점심 2점" data-value="2">★</button>
-                  <button type="button" aria-label="점심 3점" data-value="3">★</button>
-                  <button type="button" aria-label="점심 4점" data-value="4">★</button>
-                  <button type="button" aria-label="점심 5점" data-value="5">★</button>
+                  <button class="zero-star" type="button" aria-label="점심 0스타" data-value="0">0</button>
+                  <button type="button" aria-label="점심 1스타" data-value="1"><img src="/rate/MichelinStar.png" alt="" /></button>
+                  <button type="button" aria-label="점심 2스타" data-value="2"><img src="/rate/MichelinStar.png" alt="" /></button>
+                  <button type="button" aria-label="점심 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
                 </div>
-                <span class="score-label">0.0</span>
               </div>
             </div>
           </article>
@@ -112,13 +124,11 @@
               <p class="menu-list">양배추 샐러드, 단무지, 사과주스</p>
               <div class="rating-row">
                 <div class="stars" role="radiogroup" aria-label="저녁 별점">
-                  <button type="button" aria-label="저녁 1점" data-value="1">★</button>
-                  <button type="button" aria-label="저녁 2점" data-value="2">★</button>
-                  <button type="button" aria-label="저녁 3점" data-value="3">★</button>
-                  <button type="button" aria-label="저녁 4점" data-value="4">★</button>
-                  <button type="button" aria-label="저녁 5점" data-value="5">★</button>
+                  <button class="zero-star" type="button" aria-label="저녁 0스타" data-value="0">0</button>
+                  <button type="button" aria-label="저녁 1스타" data-value="1"><img src="/rate/MichelinStar.png" alt="" /></button>
+                  <button type="button" aria-label="저녁 2스타" data-value="2"><img src="/rate/MichelinStar.png" alt="" /></button>
+                  <button type="button" aria-label="저녁 3스타" data-value="3"><img src="/rate/MichelinStar.png" alt="" /></button>
                 </div>
-                <span class="score-label">0.0</span>
               </div>
             </div>
           </article>

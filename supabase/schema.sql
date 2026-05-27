@@ -1,9 +1,17 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
+  username text,
   can_rate boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+alter table public.profiles
+add column if not exists username text;
+
+create unique index if not exists profiles_username_key
+on public.profiles (lower(username))
+where username is not null;
 
 create table if not exists public.meals (
   id text primary key,
@@ -19,11 +27,17 @@ create table if not exists public.ratings (
   id bigint generated always as identity primary key,
   meal_id text not null references public.meals(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
-  score int not null check (score between 1 and 5),
+  score int not null check (score between 0 and 3),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, meal_id)
 );
+
+alter table public.ratings
+drop constraint if exists ratings_score_check;
+
+alter table public.ratings
+add constraint ratings_score_check check (score between 0 and 3);
 
 alter table public.profiles enable row level security;
 alter table public.meals enable row level security;
@@ -62,6 +76,21 @@ as $$
       and can_rate = true
   );
 $$;
+
+create or replace function public.get_email_for_username(login_username text)
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select email
+  from public.profiles
+  where lower(username) = lower(trim(login_username))
+  limit 1;
+$$;
+
+grant execute on function public.get_email_for_username(text) to anon, authenticated;
 
 create or replace function public.touch_updated_at()
 returns trigger
@@ -137,5 +166,9 @@ on conflict (id) do update set
 
 -- 평가 권한 부여 예시:
 -- update public.profiles
--- set can_rate = true
+-- set username = 'student01'
 -- where email = 'student@example.com';
+--
+-- update public.profiles
+-- set can_rate = true
+-- where username = 'student01';
