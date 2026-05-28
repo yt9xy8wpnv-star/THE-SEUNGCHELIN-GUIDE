@@ -247,22 +247,42 @@ export function initMenu(options = {}) {
   const { auth = true, onAuthChange, preloadAuth = true } = options;
   const menuButton = document.querySelector("#menu-button");
   const menuPanel = document.querySelector("#menu-panel");
+  let menuCloseTimer;
 
   if (!menuButton || !menuPanel) return;
 
+  const openMenu = () => {
+    window.clearTimeout(menuCloseTimer);
+    menuPanel.hidden = false;
+    menuButton.setAttribute("aria-expanded", "true");
+
+    window.requestAnimationFrame(() => {
+      menuPanel.dataset.open = "true";
+    });
+
+    if (auth) {
+      loadMenuAuth(menuPanel);
+    }
+  };
+
   const closeMenu = () => {
-    menuPanel.hidden = true;
+    window.clearTimeout(menuCloseTimer);
+    delete menuPanel.dataset.open;
     menuButton.setAttribute("aria-expanded", "false");
+
+    menuCloseTimer = window.setTimeout(() => {
+      if (!menuPanel.dataset.open) {
+        menuPanel.hidden = true;
+      }
+    }, 260);
   };
 
   menuButton.addEventListener("click", (event) => {
     event.stopPropagation();
-    const willOpen = menuPanel.hidden;
-    menuPanel.hidden = !willOpen;
-    menuButton.setAttribute("aria-expanded", String(willOpen));
-
-    if (willOpen && auth) {
-      loadMenuAuth(menuPanel);
+    if (menuPanel.hidden || menuPanel.dataset.open !== "true") {
+      openMenu();
+    } else {
+      closeMenu();
     }
   });
 

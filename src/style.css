@@ -54,18 +54,32 @@ a {
 }
 
 .menu-panel {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 28px;
+  position: fixed;
+  top: 68px;
+  right: 0;
+  bottom: 0;
   z-index: 20;
+  align-content: start;
   display: grid;
-  gap: 12px;
-  width: min(320px, calc(100vw - 36px));
-  padding: 18px;
+  gap: 18px;
+  width: min(380px, calc(100vw - 32px));
+  padding: 28px 26px;
   background: rgba(255, 255, 255, 0.98);
-  border: 1px solid var(--line);
-  box-shadow: 0 18px 48px rgba(32, 33, 36, 0.14);
+  border-left: 1px solid var(--line);
+  box-shadow: -22px 0 58px rgba(32, 33, 36, 0.14);
   backdrop-filter: blur(18px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(100%);
+  transition:
+    opacity 220ms ease,
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.menu-panel[data-open="true"] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
 }
 
 .menu-panel a {
@@ -76,16 +90,19 @@ a {
 
 .menu-list {
   display: grid;
-  gap: 2px;
+  gap: 4px;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 42px;
-  padding: 0 2px;
+  min-height: 48px;
+  padding: 0 4px;
   border-bottom: 1px solid var(--line);
+  transition:
+    color 160ms ease,
+    padding-left 160ms ease;
 }
 
 .menu-list .menu-item {
@@ -94,16 +111,28 @@ a {
   font-weight: 300;
 }
 
+.menu-list .menu-item:hover,
+.menu-list .menu-item:focus-visible {
+  color: var(--red);
+  padding-left: 10px;
+  outline: 0;
+}
+
 .menu-item::after {
   content: "›";
   color: var(--muted);
   font-size: 22px;
   line-height: 1;
+  transition: color 160ms ease;
+}
+
+.menu-item:hover::after,
+.menu-item:focus-visible::after {
+  color: var(--red);
 }
 
 .menu-item-primary {
   min-height: 48px;
-  color: var(--red) !important;
   font-size: 18px !important;
   font-weight: 400;
 }
@@ -154,6 +183,21 @@ a {
   height: 2px;
   margin: 3px 0;
   background: var(--ink);
+  transition:
+    opacity 160ms ease,
+    transform 180ms ease;
+}
+
+.menu-button[aria-expanded="true"] span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.menu-button[aria-expanded="true"] span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-button[aria-expanded="true"] span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
 }
 
 main {
@@ -935,10 +979,36 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
+  opacity: 0;
+  animation: mealCardReveal 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    border-color 180ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.meal-card:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.meal-card:nth-child(3) {
+  animation-delay: 180ms;
+}
+
+.meal-card:hover,
+.meal-card:focus-within {
+  border-color: rgba(189, 31, 50, 0.38);
+  box-shadow: 0 22px 52px rgba(32, 33, 36, 0.16);
+  transform: translateY(-6px);
 }
 
 .meal-card.featured {
   transform: translateY(-12px);
+}
+
+.meal-card.featured:hover,
+.meal-card.featured:focus-within {
+  transform: translateY(-18px);
 }
 
 .meal-card > img {
@@ -947,6 +1017,12 @@ h2 {
   height: auto;
   aspect-ratio: 4 / 3;
   object-fit: cover;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.meal-card:hover > img,
+.meal-card:focus-within > img {
+  transform: scale(1.035);
 }
 
 .meal-content {
@@ -1043,6 +1119,18 @@ h2 {
 .stars button.active img {
   opacity: 1;
   filter: none;
+}
+
+@keyframes mealCardReveal {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
 
 .stars button:disabled {
@@ -1345,6 +1433,12 @@ h2 {
     padding: 0 18px;
   }
 
+  .menu-panel {
+    top: 64px;
+    width: min(340px, calc(100vw - 24px));
+    padding: 24px 22px;
+  }
+
   .brand {
     max-width: calc(100vw - 86px);
   }
@@ -1489,5 +1583,16 @@ h2 {
   .score-list article {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
