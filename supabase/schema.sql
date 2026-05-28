@@ -32,6 +32,7 @@ create table if not exists public.ratings (
   user_id uuid not null references auth.users(id) on delete cascade,
   score int not null check (score between 0 and 3),
   one_line_review text not null default '',
+  is_hidden_pick boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (user_id, meal_id)
@@ -41,21 +42,68 @@ create table if not exists public.best_meals (
   id bigint generated always as identity primary key,
   meal_id text not null unique references public.meals(id) on delete cascade,
   created_by uuid references auth.users(id) on delete set null,
+  score_snapshot int not null default 0 check (score_snapshot between 0 and 3),
+  is_hidden_pick boolean not null default false,
   created_at timestamptz not null default now()
 );
 
 alter table public.ratings
 add column if not exists one_line_review text not null default '';
 
+alter table public.ratings
+add column if not exists is_hidden_pick boolean not null default false;
+
+alter table public.best_meals
+add column if not exists score_snapshot int not null default 0;
+
+alter table public.best_meals
+add column if not exists is_hidden_pick boolean not null default false;
+
+alter table public.best_meals
+drop constraint if exists best_meals_score_snapshot_check;
+
+alter table public.best_meals
+add constraint best_meals_score_snapshot_check check (score_snapshot between 0 and 3);
+
 update public.ratings
 set one_line_review = ''
 where one_line_review is null;
+
+update public.ratings
+set is_hidden_pick = false
+where is_hidden_pick is null;
+
+update public.best_meals
+set score_snapshot = 0
+where score_snapshot is null;
+
+update public.best_meals
+set is_hidden_pick = false
+where is_hidden_pick is null;
 
 alter table public.ratings
 alter column one_line_review set default '';
 
 alter table public.ratings
 alter column one_line_review set not null;
+
+alter table public.ratings
+alter column is_hidden_pick set default false;
+
+alter table public.ratings
+alter column is_hidden_pick set not null;
+
+alter table public.best_meals
+alter column score_snapshot set default 0;
+
+alter table public.best_meals
+alter column score_snapshot set not null;
+
+alter table public.best_meals
+alter column is_hidden_pick set default false;
+
+alter table public.best_meals
+alter column is_hidden_pick set not null;
 
 alter table public.ratings
 alter column score set default 0;
@@ -213,15 +261,36 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  rating_score int := 0;
+  rating_hidden boolean := false;
 begin
   if auth.uid() is null or not public.can_current_user_rate() then
     raise exception 'not allowed';
   end if;
 
-  insert into public.best_meals (meal_id, created_by, created_at)
-  values (target_meal_id, auth.uid(), now())
+  select score, is_hidden_pick
+  into rating_score, rating_hidden
+  from public.ratings
+  where meal_id = target_meal_id
+    and user_id = auth.uid()
+  limit 1;
+
+  rating_score := coalesce(rating_score, 0);
+  rating_hidden := rating_score = 3 and coalesce(rating_hidden, false);
+
+  insert into public.best_meals (
+    meal_id,
+    created_by,
+    score_snapshot,
+    is_hidden_pick,
+    created_at
+  )
+  values (target_meal_id, auth.uid(), rating_score, rating_hidden, now())
   on conflict (meal_id) do update set
     created_by = excluded.created_by,
+    score_snapshot = excluded.score_snapshot,
+    is_hidden_pick = excluded.is_hidden_pick,
     created_at = excluded.created_at;
 
   delete from public.best_meals

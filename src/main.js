@@ -4,9 +4,12 @@ import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
 
 const STORAGE_KEY = "seungchelin-ratings";
 const REVIEW_STORAGE_KEY = "seungchelin-reviews";
+const HIDDEN_RATING_STORAGE_KEY = "seungchelin-hidden-ratings";
 const REVIEW_CHARACTER_LIMIT = 30;
 const REVIEW_EMPTY_TEXT = "아직 미식가가 다녀가지 않음";
 const REVIEW_PUBLIC_EMPTY_TEXT = "아직 미식가가 다녀가지 않음";
+const HIDDEN_RATING_SCORE = 3;
+const STAR_CLICK_DELAY_MS = 220;
 const KOREA_TIME_ZONE = "Asia/Seoul";
 const MAX_PAST_DAYS = 3;
 const MAX_FUTURE_DAYS = 7;
@@ -41,6 +44,7 @@ const nextDateButton = document.querySelector("#next-date-button");
 const todayDate = getKoreaDate();
 let mealLoadSerial = 0;
 let authRefreshSerial = 0;
+const starClickTimers = new Map();
 
 const state = {
   canRate: !isSupabaseConfigured,
@@ -50,8 +54,10 @@ const state = {
   meals: [],
   userRatings: {},
   userReviews: {},
+  userHiddenRatings: {},
   publicRatings: {},
   publicReviews: {},
+  publicHiddenRatings: {},
   isLoadingMeals: false,
 };
 
@@ -192,8 +198,10 @@ function getMealIds() {
 function resetMealFeedbackState() {
   state.userRatings = Object.fromEntries(getMealIds().map((id) => [id, 0]));
   state.userReviews = Object.fromEntries(getMealIds().map((id) => [id, ""]));
+  state.userHiddenRatings = Object.fromEntries(getMealIds().map((id) => [id, false]));
   state.publicRatings = Object.fromEntries(getMealIds().map((id) => [id, 0]));
   state.publicReviews = Object.fromEntries(getMealIds().map((id) => [id, ""]));
+  state.publicHiddenRatings = Object.fromEntries(getMealIds().map((id) => [id, false]));
 }
 
 function sortMeals(meals) {
@@ -261,8 +269,15 @@ function setReviewEditing(card, editing) {
   }
 }
 
-function setCardRating(card, activeValue) {
+function setCardRating(card, activeValue, isHidden = false) {
   const buttons = card.querySelectorAll(".stars button");
+  const stars = card.querySelector("[data-rating-control]");
+  const showHidden = activeValue === HIDDEN_RATING_SCORE && isHidden;
+  const showTopPick = activeValue === HIDDEN_RATING_SCORE && !showHidden;
+
+  card.classList.toggle("hidden-pick", showHidden);
+  card.classList.toggle("top-pick", showTopPick);
+  stars?.classList.toggle("hidden-pick", showHidden);
 
   buttons.forEach((button) => {
     const buttonValue = Number(button.dataset.value);
@@ -274,6 +289,11 @@ function setCardRating(card, activeValue) {
 function getVisibleRating(meal) {
   if (state.canRate) return state.userRatings[meal] || 0;
   return state.publicRatings[meal] || 0;
+}
+
+function getVisibleHiddenRating(meal) {
+  if (state.canRate) return Boolean(state.userHiddenRatings[meal]);
+  return Boolean(state.publicHiddenRatings[meal]);
 }
 
 function getVisibleReview(meal) {
@@ -330,7 +350,7 @@ function setReviewEnabled(enabled) {
 function renderRatings() {
   document.querySelectorAll(".meal-card").forEach((card) => {
     const meal = card.dataset.meal;
-    setCardRating(card, getVisibleRating(meal));
+    setCardRating(card, getVisibleRating(meal), getVisibleHiddenRating(meal));
   });
 
   setRatingEnabled(state.canRate);
@@ -538,6 +558,10 @@ async function loadMealsForSelectedDate({ updateUrl = true } = {}) {
       resetMealFeedbackState();
       state.userRatings = { ...state.userRatings, ...loadLocalMap(STORAGE_KEY) };
       state.userReviews = { ...state.userReviews, ...loadLocalMap(REVIEW_STORAGE_KEY) };
+      state.userHiddenRatings = {
+        ...state.userHiddenRatings,
+        ...loadLocalMap(HIDDEN_RATING_STORAGE_KEY),
+      };
       renderAuthStatus("로컬 데모 모드");
       return;
     }
@@ -586,15 +610,8 @@ async function loadUserRatingState() {
   resetMealFeedbackState();
 
   const mealIds = getMealIds();
-  const publicRatingsRequest = mealIds.length
-    ? supabase
-        .from("ratings")
-        .select("meal_id, score, one_line_review, updated_at, created_at")
-        .in("meal_id", mealIds)
-    : Promise.resolve({ data: [] });
-
-  const { data: publicRatings } = await publicRatingsRequest;
-  applyPublicFeedback(publicRatings ?? []);
+  const publicRatings = await fetchRatings({ mealIds, includePublicMeta: true });
+  applyPublicFeedback(publicRatings);
 
   if (!state.user) {
     renderAuthStatus("로그인하면 평가를 남길 수 있습니다.");
@@ -606,15 +623,9 @@ async function loadUserRatingState() {
     .select("can_rate, username")
     .eq("id", state.user.id)
     .maybeSingle();
-  const userRatingsRequest = mealIds.length
-    ? supabase
-        .from("ratings")
-        .select("meal_id, score, one_line_review")
-        .eq("user_id", state.user.id)
-        .in("meal_id", mealIds)
-    : Promise.resolve({ data: [] });
+  const userRatingsRequest = fetchRatings({ mealIds, userId: state.user.id });
 
-  const [{ data: profile }, { data: userRatings }] = await Promise.all([
+  const [{ data: profile }, userRatings] = await Promise.all([
     profileRequest,
     userRatingsRequest,
   ]);
@@ -626,6 +637,8 @@ async function loadUserRatingState() {
     if (rating.meal_id in state.userRatings) {
       state.userRatings[rating.meal_id] = rating.score;
       state.userReviews[rating.meal_id] = rating.one_line_review || "";
+      state.userHiddenRatings[rating.meal_id] =
+        Number(rating.score) === HIDDEN_RATING_SCORE && Boolean(rating.is_hidden_pick);
     }
   });
 
@@ -634,6 +647,39 @@ async function loadUserRatingState() {
       ? `${state.username} 평가 가능`
       : `${state.username} 평가 권한 없음`,
   );
+}
+
+function isMissingHiddenColumnError(error) {
+  const message = error?.message || "";
+  return message.includes("is_hidden_pick") || message.includes("schema cache");
+}
+
+async function fetchRatings({ mealIds, userId = "", includePublicMeta = false }) {
+  if (!mealIds.length) return [];
+
+  const visibleSelect = includePublicMeta
+    ? "meal_id, score, one_line_review, is_hidden_pick, updated_at, created_at"
+    : "meal_id, score, one_line_review, is_hidden_pick";
+  const fallbackSelect = includePublicMeta
+    ? "meal_id, score, one_line_review, updated_at, created_at"
+    : "meal_id, score, one_line_review";
+
+  const runQuery = (columns) => {
+    let query = supabase.from("ratings").select(columns).in("meal_id", mealIds);
+    if (userId) {
+      query = query.eq("user_id", userId);
+    }
+    return query;
+  };
+
+  let { data, error } = await runQuery(visibleSelect);
+
+  if (error && isMissingHiddenColumnError(error)) {
+    ({ data, error } = await runQuery(fallbackSelect));
+  }
+
+  if (error) return [];
+  return data ?? [];
 }
 
 function applyPublicFeedback(ratings) {
@@ -653,6 +699,8 @@ function applyPublicFeedback(ratings) {
 
     summary[rating.meal_id].total += Number(rating.score) || 0;
     summary[rating.meal_id].count += 1;
+    summary[rating.meal_id].isHidden ||=
+      Number(rating.score) === HIDDEN_RATING_SCORE && Boolean(rating.is_hidden_pick);
 
     const review = String(rating.one_line_review || "").trim();
     const reviewTime = rating.updated_at || rating.created_at || "";
@@ -665,42 +713,58 @@ function applyPublicFeedback(ratings) {
   Object.entries(summary).forEach(([meal, value]) => {
     state.publicRatings[meal] = Math.round(value.total / value.count);
     state.publicReviews[meal] = value.review;
+    state.publicHiddenRatings[meal] = Boolean(value.isHidden);
   });
 }
 
-async function saveSupabaseRating(meal, score) {
-  if (!state.user) return;
+async function upsertRating(payload) {
+  let { error } = await supabase.from("ratings").upsert(payload, {
+    onConflict: "user_id,meal_id",
+  });
 
-  const { error } = await supabase.from("ratings").upsert(
-    {
-      meal_id: meal,
-      score,
-      user_id: state.user.id,
-    },
-    { onConflict: "user_id,meal_id" },
-  );
+  if (error && isMissingHiddenColumnError(error) && "is_hidden_pick" in payload) {
+    const { is_hidden_pick: _isHiddenPick, ...fallbackPayload } = payload;
+    ({ error } = await supabase.from("ratings").upsert(fallbackPayload, {
+      onConflict: "user_id,meal_id",
+    }));
+  }
+
+  return error;
+}
+
+async function saveSupabaseRating(meal, score, isHidden = false) {
+  if (!state.user) return false;
+
+  const hiddenPick = score === HIDDEN_RATING_SCORE && isHidden;
+  const error = await upsertRating({
+    meal_id: meal,
+    score,
+    user_id: state.user.id,
+    is_hidden_pick: hiddenPick,
+  });
 
   if (error) {
     renderAuthStatus("평가 저장 권한이 없습니다.");
-    return;
+    return false;
   }
 
   state.userRatings[meal] = score;
+  state.userHiddenRatings[meal] = hiddenPick;
   renderRatings();
+  return true;
 }
 
 async function saveSupabaseReview(meal, review) {
   if (!state.user) return;
 
-  const { error } = await supabase.from("ratings").upsert(
-    {
-      meal_id: meal,
-      score: state.userRatings[meal] || 0,
-      user_id: state.user.id,
-      one_line_review: review,
-    },
-    { onConflict: "user_id,meal_id" },
-  );
+  const score = state.userRatings[meal] || 0;
+  const error = await upsertRating({
+    meal_id: meal,
+    score,
+    user_id: state.user.id,
+    one_line_review: review,
+    is_hidden_pick: score === HIDDEN_RATING_SCORE && Boolean(state.userHiddenRatings[meal]),
+  });
 
   if (error) {
     renderAuthStatus("한줄평 저장 권한이 없습니다.");
@@ -778,6 +842,37 @@ function initMealInteractions() {
     true,
   );
 
+  mealGrid.addEventListener("dblclick", async (event) => {
+    const card = event.target.closest(".meal-card");
+    const starButton = event.target.closest(".stars button");
+    if (!card || !starButton || !state.canRate) return;
+
+    const selectedValue = Number(starButton.dataset.value);
+    if (selectedValue !== HIDDEN_RATING_SCORE) return;
+
+    const meal = card.dataset.meal;
+    window.clearTimeout(starClickTimers.get(meal));
+    starClickTimers.delete(meal);
+
+    const shouldHide = !(
+      state.userRatings[meal] === HIDDEN_RATING_SCORE && state.userHiddenRatings[meal]
+    );
+
+    if (!isSupabaseConfigured) {
+      state.userRatings[meal] = HIDDEN_RATING_SCORE;
+      state.userHiddenRatings[meal] = shouldHide;
+      saveLocalMap(STORAGE_KEY, state.userRatings);
+      saveLocalMap(HIDDEN_RATING_STORAGE_KEY, state.userHiddenRatings);
+      renderRatings();
+      return;
+    }
+
+    const saved = await saveSupabaseRating(meal, HIDDEN_RATING_SCORE, shouldHide);
+    if (saved) {
+      renderAuthStatus(shouldHide ? "히든 평가가 적용되었습니다." : "히든 평가가 해제되었습니다.");
+    }
+  });
+
   mealGrid.addEventListener("click", async (event) => {
     const card = event.target.closest(".meal-card");
     if (!card) return;
@@ -792,18 +887,28 @@ function initMealInteractions() {
     if (starButton) {
       if (!state.canRate) return;
 
+      window.clearTimeout(starClickTimers.get(meal));
       const selectedValue = Number(starButton.dataset.value);
-      const currentValue = state.userRatings[meal] || 0;
-      const value = currentValue === selectedValue ? 0 : selectedValue;
+      const timer = window.setTimeout(async () => {
+        const currentValue = state.userRatings[meal] || 0;
+        const value = currentValue === selectedValue ? 0 : selectedValue;
+        const hiddenPick = value === HIDDEN_RATING_SCORE && state.userHiddenRatings[meal];
 
-      if (!isSupabaseConfigured) {
-        state.userRatings[meal] = value;
-        saveLocalMap(STORAGE_KEY, state.userRatings);
-        renderRatings();
-        return;
-      }
+        if (!isSupabaseConfigured) {
+          state.userRatings[meal] = value;
+          state.userHiddenRatings[meal] = hiddenPick;
+          saveLocalMap(STORAGE_KEY, state.userRatings);
+          saveLocalMap(HIDDEN_RATING_STORAGE_KEY, state.userHiddenRatings);
+          renderRatings();
+          starClickTimers.delete(meal);
+          return;
+        }
 
-      await saveSupabaseRating(meal, value);
+        await saveSupabaseRating(meal, value, hiddenPick);
+        starClickTimers.delete(meal);
+      }, STAR_CLICK_DELAY_MS);
+
+      starClickTimers.set(meal, timer);
       return;
     }
 

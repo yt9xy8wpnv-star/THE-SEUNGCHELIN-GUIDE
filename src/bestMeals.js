@@ -14,6 +14,7 @@ const SLOT_LABELS = {
   lunch: "점심",
   dinner: "저녁",
 };
+const HIDDEN_RATING_SCORE = 3;
 
 const bestStatus = document.querySelector("#best-status");
 const bestGrid = document.querySelector("#best-grid");
@@ -44,8 +45,12 @@ function formatDate(value) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
+function clampScore(score) {
+  return Math.max(0, Math.min(3, Math.round(Number(score) || 0)));
+}
+
 function renderStars(score) {
-  const safeScore = Math.max(0, Math.min(3, Math.round(Number(score) || 0)));
+  const safeScore = clampScore(score);
 
   return Array.from({ length: 3 }, (_, index) => {
     const active = index < safeScore ? " active" : "";
@@ -63,11 +68,15 @@ function summarizeRatings(ratings) {
         count: 0,
         review: "",
         reviewTime: "",
+        isHidden: false,
       };
     }
 
     summary[rating.meal_id].total += Number(rating.score) || 0;
     summary[rating.meal_id].count += 1;
+    summary[rating.meal_id].isHidden =
+      summary[rating.meal_id].isHidden ||
+      (Number(rating.score) === HIDDEN_RATING_SCORE && Boolean(rating.is_hidden_pick));
 
     const review = String(rating.one_line_review || "").trim();
     const reviewTime = rating.updated_at || rating.created_at || "";
@@ -150,6 +159,49 @@ async function fetchPublicRows(table, params) {
   }
 }
 
+function isMissingHiddenColumnError(error) {
+  const message = String(error?.message || error || "");
+  return (
+    message.includes("is_hidden_pick") ||
+    message.includes("score_snapshot") ||
+    message.includes("schema cache")
+  );
+}
+
+async function fetchBestMealRows() {
+  try {
+    return await fetchPublicRows("best_meals", {
+      select: "id,meal_id,score_snapshot,is_hidden_pick,created_at",
+      order: "created_at.desc,id.desc",
+      limit: "10",
+    });
+  } catch (error) {
+    if (!isMissingHiddenColumnError(error)) throw error;
+
+    return fetchPublicRows("best_meals", {
+      select: "id,meal_id,created_at",
+      order: "created_at.desc,id.desc",
+      limit: "10",
+    });
+  }
+}
+
+async function fetchRatingRows(mealFilter) {
+  try {
+    return await fetchPublicRows("ratings", {
+      select: "meal_id,score,one_line_review,is_hidden_pick,updated_at,created_at",
+      meal_id: mealFilter,
+    });
+  } catch (error) {
+    if (!isMissingHiddenColumnError(error)) throw error;
+
+    return fetchPublicRows("ratings", {
+      select: "meal_id,score,one_line_review,updated_at,created_at",
+      meal_id: mealFilter,
+    });
+  }
+}
+
 function renderBestCards(bestMeals, mealsById, ratingSummary) {
   bestGrid.innerHTML = bestMeals
     .map((bestMeal) => {
@@ -157,6 +209,19 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
       if (!meal) return "";
 
       const summary = ratingSummary[bestMeal.meal_id] || {};
+      const hasSnapshot = bestMeal.score_snapshot !== undefined && bestMeal.score_snapshot !== null;
+      const bestHiddenPick =
+        Number(bestMeal.score_snapshot) === HIDDEN_RATING_SCORE &&
+        Boolean(bestMeal.is_hidden_pick);
+      const displayHiddenPick = bestHiddenPick || (!hasSnapshot && summary.isHidden);
+      const displayScore = displayHiddenPick
+        ? HIDDEN_RATING_SCORE
+        : clampScore(hasSnapshot ? bestMeal.score_snapshot : summary.score);
+      const cardStateClass = displayHiddenPick
+        ? " hidden-pick"
+        : displayScore === HIDDEN_RATING_SCORE
+          ? " top-pick"
+          : "";
       const fallbackImage = `/assets/${meal.meal_slot || "lunch"}.png`;
       const menuItems = getMenuItems(meal)
         .map((item) => `<li>${escapeHtml(item)}</li>`)
@@ -176,7 +241,7 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
         : "";
 
       return `
-        <article class="best-card">
+        <article class="best-card${cardStateClass}">
           ${removeButton}
           <img
             src="${escapeHtml(meal.image_path || fallbackImage)}"
@@ -186,8 +251,8 @@ function renderBestCards(bestMeals, mealsById, ratingSummary) {
           <div class="best-card-body">
             <span>${escapeHtml(formatDate(meal.meal_date))} · ${escapeHtml(SLOT_LABELS[meal.meal_slot] || "급식")}</span>
             <ul>${menuItems}</ul>
-            <div class="best-card-stars" aria-label="평균 별점 ${summary.score || 0}스타">
-              ${renderStars(summary.score || 0)}
+            <div class="best-card-stars" aria-label="${displayHiddenPick ? "히든 " : ""}별점 ${displayScore}스타">
+              ${renderStars(displayScore)}
             </div>
             <p class="best-review">"${escapeHtml(review)}"</p>
           </div>
@@ -230,11 +295,7 @@ async function loadBestMeals() {
   bestStatus.textContent = "BEST 식사를 불러오는 중입니다.";
 
   try {
-    const bestMeals = await fetchPublicRows("best_meals", {
-      select: "id,meal_id,created_at",
-      order: "created_at.desc,id.desc",
-      limit: "10",
-    });
+    const bestMeals = await fetchBestMealRows();
 
     if (requestId !== bestLoadSerial) return;
 
@@ -251,10 +312,7 @@ async function loadBestMeals() {
         select: "id,meal_date,meal_slot,title,menu,image_path",
         id: mealFilter,
       }),
-      fetchPublicRows("ratings", {
-        select: "meal_id,score,one_line_review,updated_at,created_at",
-        meal_id: mealFilter,
-      }),
+      fetchRatingRows(mealFilter),
     ]);
 
     if (requestId !== bestLoadSerial) return;
